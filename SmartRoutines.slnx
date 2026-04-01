@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SmartRoutines.Core/SmartRoutines.Core.csproj" />
+  <Project Path="SmartRoutines.Data/SmartRoutines.Data.csproj" Id="49fbc1b9-085f-4b4f-b483-d5c68246eddc" />
+  <Project Path="SmartRoutines.Logic/SmartRoutines.Logic.csproj" Id="83381444-214d-40a0-9f8b-6ab4b5f28460" />
+  <Project Path="SmartRoutines.UI/SmartRoutines.UI.csproj" Id="1867127a-b80a-4938-87bb-83ff2cf548ad" />
+</Solution>
