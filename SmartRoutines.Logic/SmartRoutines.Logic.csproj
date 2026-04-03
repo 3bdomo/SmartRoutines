@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ActionExecutors\" />
     <Folder Include="Services\" />
     <Folder Include="TriggerMonitors\" />
   </ItemGroup>
