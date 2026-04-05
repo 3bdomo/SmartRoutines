@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SmartRoutines.Logic\SmartRoutines.Logic.csproj" />
+    <ProjectReference Include="..\SmartRoutines.Data\SmartRoutines.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

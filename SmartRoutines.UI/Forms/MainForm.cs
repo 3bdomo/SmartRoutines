@@ -1,4 +1,4 @@
-using SmartRoutines.Core.Exceptions;
+﻿using SmartRoutines.Core.Exceptions;
 using SmartRoutines.Core.Models;
 using SmartRoutines.Logic.ActionExecutors;
 
