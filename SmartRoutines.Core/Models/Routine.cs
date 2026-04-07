@@ -41,6 +41,7 @@ namespace SmartRoutines.Core.Models
         /// </summary>
         public string TriggerConfig { get; private set; }
 
+
         private readonly List<ActionEntry> _actions = new();
 
         /// <summary>

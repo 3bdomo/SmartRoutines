@@ -1,6 +1,5 @@
-using System;
-using System.Text.Json;
 using SmartRoutines.Core.Interfaces.Logic;
+using System.Text.Json;
 
 namespace SmartRoutines.Logic.TriggerMonitors
 {
@@ -29,6 +28,11 @@ namespace SmartRoutines.Logic.TriggerMonitors
                 }
                 return false;
             }
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
 
         public void Initialize(string configJson)

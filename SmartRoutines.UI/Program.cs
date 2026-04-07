@@ -1,7 +1,4 @@
 using SmartRoutines.UI.Forms;
-using SmartRoutines.Data.Repositories;
-using SmartRoutines.Logic;
-using System.Threading;
 
 namespace SmartRoutines.UI
 {
@@ -18,10 +15,10 @@ namespace SmartRoutines.UI
 
             ApplicationConfiguration.Initialize();
 
-            // Wire dependencies
-            var routineRepo = new MockRoutineRepository();
-            var logRepo = new MockLogRepository();
-            var backgroundMonitor = new BackgroundMonitorService(routineRepo, logRepo);
+            //// Wire dependencies
+            //var routineRepo = new MockRoutineRepository();
+            //var logRepo = new MockLogRepository();
+            //var backgroundMonitor = new BackgroundMonitorService(routineRepo, logRepo);
 
             Application.Run(new Form1());
         }
