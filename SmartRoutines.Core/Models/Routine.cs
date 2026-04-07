@@ -41,7 +41,7 @@ namespace SmartRoutines.Core.Models
         /// </summary>
         public string TriggerConfig { get; private set; }
 
-        public readonly List<ActionEntry> _actions = new();
+        private readonly List<ActionEntry> _actions = new();
 
         /// <summary>
         /// A read-only collection of actions belonging to this routine.
