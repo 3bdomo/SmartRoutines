@@ -20,6 +20,7 @@
         public static Color Warning = ColorTranslator.FromHtml("#F39C12"); // Amber 
         public static Color Danger = ColorTranslator.FromHtml("#E74C3C"); // Red 
         public static Color Purple = ColorTranslator.FromHtml("#8B5CF6"); // Purple accent
+        public static Color DangerMuted = ColorTranslator.FromHtml("#4D1F1F");
         // ── Text Colors ─────────────────────────────────────────────── 
         public static Color TextPrimary = ColorTranslator.FromHtml("#FFFFFF"); // Headings
         public static Color TextSecondary = ColorTranslator.FromHtml("#A0A0A0"); // Subtitles

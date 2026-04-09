@@ -1,3 +1,4 @@
+using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
@@ -15,12 +16,23 @@ namespace SmartRoutines.UI
 
             ApplicationConfiguration.Initialize();
 
-            //// Wire dependencies
-            //var routineRepo = new MockRoutineRepository();
-            //var logRepo = new MockLogRepository();
-            //var backgroundMonitor = new BackgroundMonitorService(routineRepo, logRepo);
+            // Create the dashboard control
+            var dashboard = new UC_Dashboard();
+            var statcard  = new UC_StatCard();
+            var routin  = new UC_RoutineCard();
 
-            Application.Run(new Form1());
+            // Create a Form to host the control
+            var mainForm = new Form
+            {
+                Text = "SmartRoutines Dashboard",
+                StartPosition = FormStartPosition.CenterScreen,
+                WindowState = FormWindowState.Maximized
+            };
+
+            dashboard.Dock = DockStyle.Fill;
+            mainForm.Controls.Add(statcard);
+
+            Application.Run(mainForm);
         }
     }
 }
