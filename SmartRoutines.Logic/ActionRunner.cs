@@ -10,11 +10,13 @@ namespace SmartRoutines.Logic
     {
         private readonly List<IAction> _actions;
         private readonly ActionContext _actionContext;
+        private readonly ActionEntry _actionEntry;
 
-        public ActionRunner(List<IAction> actions, ActionContext actionContext)
+        public ActionRunner(List<IAction> actions, ActionContext actionContext, ActionEntry actionEntry)
         {
             _actions = actions;
             _actionContext = actionContext;
+            _actionEntry = actionEntry;
         }
 
         public void Run()
@@ -23,7 +25,7 @@ namespace SmartRoutines.Logic
             {
                 try
                 {
-                    action.Execute(_actionContext);
+                    action.Execute(_actionEntry,_actionContext);
                     // Notify Member 4 of SUCCESS
                     // ReportToTracker(action.ActionName, "SUCCESS", null);
                 }

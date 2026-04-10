@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using SmartRoutines.Core.Enums;
 using SmartRoutines.Core.Exceptions;
 using SmartRoutines.Core.Interfaces;
@@ -8,104 +9,35 @@ namespace SmartRoutines.Logic.ActionExecutors;
 
 public class OpenApplicationAction : IAction
 {
-    private string ApplicationPath { get; set; }
-    private string Arguments { get; set; }
-    /// <summary>
-    ///  If user want to make the app running even the smartroutines is closed, set this to true.
-    /// It will start the app in a detached way using cmd.exe, so that it won't be killed when the main process exits. .
-    /// </summary>
-    private bool ForceDetached { get; set; }
-    public LogStatus Status { get; private set; }
-    public string ErrorMessage { get; private set; } = string.Empty;
-    public ActionType ActionType { get; }
-   
+    public ActionType ActionType => ActionType.LaunchApp;
 
-    public OpenApplicationAction(string applicationPath, string arguments = "", bool forceDetached = false)
-    {
-        ApplicationPath = applicationPath;
-        Arguments = arguments;
-        ForceDetached = forceDetached;
-        ActionType = ActionType.LaunchApp;
-    }
+    public LogStatus Status { get; }
+    public string ErrorMessage { get; }
 
-    public OpenApplicationAction(string applicationPath)
-    {
-        ApplicationPath = applicationPath;
-        Arguments = string.Empty;
-        ForceDetached = false;
-        ActionType = ActionType.LaunchApp;
-    }
-
-    public void Execute(ActionContext context)
+    public void Execute(ActionEntry entry, ActionContext context)
     {
         try
         {
-            string normalizedPath = NormalizePath(ApplicationPath);
+            var launchRequest = ParseLaunchRequest(entry);
+            var normalizedPath = NormalizePath(launchRequest.ApplicationPath);
 
-            if (ForceDetached)
+            var psi = new ProcessStartInfo
             {
-                StartDetached(normalizedPath, Arguments ?? string.Empty);
-            }
-            else
+                FileName = normalizedPath,
+                Arguments = launchRequest.Arguments,
+                UseShellExecute = true,
+                WorkingDirectory = ResolveWorkingDirectory(normalizedPath)
+            };
+
+            var process = Process.Start(psi);
+            if (process is null)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = normalizedPath,
-                    Arguments = Arguments ?? string.Empty,
-                    UseShellExecute = true,
-                    WorkingDirectory = ResolveWorkingDirectory(normalizedPath)
-                };
-
-                var process = Process.Start(psi);
-                if (process is null)
-                {
-                    throw new InvalidOperationException("Process start returned null.");
-                }
+                throw new InvalidOperationException("Process start returned null.");
             }
-
-            Status = LogStatus.Success;
-            ErrorMessage = string.Empty;
         }
         catch (Exception ex)
         {
-            Status = LogStatus.Error;
-            ErrorMessage = $"Failed to open application: {ex.Message}";
-            throw new ActionFailedException(ActionType,ErrorMessage, ex);
-        }
-    }
-/// <summary>
-/// Starts an application in a detached process using cmd.exe, allowing it to continue running
-/// independently of the parent process.
-/// </summary>
-/// <param name="executablePath">The full path to the executable to run.</param>
-/// <param name="arguments">Optional command\-line arguments to pass to the executable.</param>
-/// <remarks>
-/// This method uses cmd.exe with the "start" command to detach the process. The application
-/// will run in a hidden window and continue executing even after the parent process terminates.
-/// </remarks>
-/// <exception cref="InvalidOperationException">Thrown when the detached process fails to start.</exception>
-    private static void StartDetached(string executablePath, string arguments)
-    {
-        var detachedArgs = $"/c start \"\" \"{executablePath}\"";
-        if (!string.IsNullOrWhiteSpace(arguments))
-        {
-            detachedArgs = $"{detachedArgs} {arguments}";
-        }
-
-        var cmdPsi = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = detachedArgs,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden,
-            WorkingDirectory = ResolveWorkingDirectory(executablePath)
-        };
-
-        var shellProcess = Process.Start(cmdPsi);
-        if (shellProcess is null)
-        {
-            throw new InvalidOperationException("Detached process start returned null.");
+            throw new ActionFailedException(ActionType, $"Failed to open application: {ex.Message}", ex);
         }
     }
 
@@ -113,10 +45,53 @@ public class OpenApplicationAction : IAction
     {
         return path.Trim().Trim('"');
     }
+    
+    private static LaunchRequest ParseLaunchRequest(ActionEntry entry)
+    {
+        if (entry is null)
+        {
+            throw new ArgumentNullException(nameof(entry));
+        }
+    
+        if (entry.Type != ActionType.LaunchApp)
+        {
+            throw new ArgumentException("Action entry type must be LaunchApp.", nameof(entry));
+        }
+    
+        if (string.IsNullOrWhiteSpace(entry.Arguments))
+        {
+            throw new ArgumentException("LaunchApp action requires a non-empty argument payload.", nameof(entry));
+        }
+    
+        var payload = entry.Arguments.Trim();
+    
+        if (!payload.StartsWith("{", StringComparison.Ordinal))
+        {
+            return new LaunchRequest(payload, string.Empty);
+        }
+    
+        var parsed = JsonSerializer.Deserialize<LaunchRequestPayload>(payload);
+        if (parsed is null || string.IsNullOrWhiteSpace(parsed.ApplicationPath))
+        {
+            throw new ArgumentException("LaunchApp JSON payload must contain 'ApplicationPath'.", nameof(entry));
+        }
+    
+        return new LaunchRequest(parsed.ApplicationPath, parsed.Arguments ?? string.Empty);
+    }
 
     private static string ResolveWorkingDirectory(string path)
     {
         var directory = Path.GetDirectoryName(path);
         return string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
+    }
+    
+    private sealed record LaunchRequest(string ApplicationPath, string Arguments);
+    
+    private sealed class LaunchRequestPayload
+    {
+        public string ApplicationPath { get; init; } = string.Empty;
+        public string? Arguments { get; init; }
+        // // Legacy field kept for payload compatibility; ignored by design.
+        // public bool ForceDetached { get; init; }
     }
 }

@@ -1,16 +1,30 @@
-﻿namespace SmartRoutines.Core.Models;
+﻿using System;
+using System.Collections.Generic;
 
+namespace SmartRoutines.Core.Models;
+
+/// <summary>
+/// Provides runtime metadata for executing a routine action.
+/// </summary>
 public class ActionContext
 {
-    // The name of the routine currently running
-    public string RoutineName { get; set; }
+    /// <summary>
+    /// Gets the name of the routine currently being executed.
+    /// </summary>
+    public string RoutineName { get; init; } = string.Empty;
 
-    // The timestamp when the trigger condition was met
-    public DateTime TriggerTime { get; set; }
+    /// <summary>
+    /// Gets the timestamp when the trigger condition was met.
+    /// </summary>
+    public DateTime TriggerTime { get; init; }
 
-    // Any specific data provided by the trigger (e.g., Battery level, SSID)
-    public Dictionary<string, object>? TriggerData { get; set; }
+    /// <summary>
+    /// Gets trigger-specific data (for example, battery level or Wi-Fi SSID).
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> TriggerData { get; init; } = new Dictionary<string, object?>();
 
-    // A flag to indicate if the user started this manually (UC-01)
-    public bool IsManualTrigger { get; set; }
+    /// <summary>
+    /// Gets a value indicating whether the routine was started manually.
+    /// </summary>
+    public bool IsManualTrigger { get; init; }
 }

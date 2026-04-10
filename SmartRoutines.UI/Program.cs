@@ -1,3 +1,4 @@
+using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
@@ -30,8 +31,10 @@ namespace SmartRoutines.UI
 
             //dashboard.Dock = DockStyle.Fill;
             //mainForm.Controls.Add(statcard);
+            var form = new Form1();
+            form.Controls.Add(new UC_ActionsMain() { Dock = DockStyle.Fill });
 
-            Application.Run(new Form1());
+            Application.Run(form);
         }
     }
 }
