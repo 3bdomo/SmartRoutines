@@ -5,8 +5,6 @@ namespace SmartRoutines.Core.Interfaces;
 
 public interface IAction
 {
-    ActionType ActionType { get; }
-    void Execute(ActionContext context); // The core logic of the action
-    LogStatus Status { get; }
-    string ErrorMessage { get; }
+    void Execute(ActionEntry entry,ActionContext context); // The core logic of the action
+
 }

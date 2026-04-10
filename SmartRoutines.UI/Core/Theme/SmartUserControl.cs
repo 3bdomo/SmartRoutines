@@ -1,4 +1,5 @@
 ﻿using Guna.UI2.WinForms;
+using System.ComponentModel;
 
 namespace SmartRoutines.UI.Core.Theme
 {
@@ -6,6 +7,11 @@ namespace SmartRoutines.UI.Core.Theme
     public class SmartUserControl : UserControl
     {
         protected Guna2Transition _transition;
+
+        protected bool IsInDesignMode =>
+            DesignMode ||
+            LicenseManager.UsageMode == LicenseUsageMode.Designtime ||
+            (Site?.DesignMode ?? false);
 
         public SmartUserControl()
         {
@@ -24,7 +30,7 @@ namespace SmartRoutines.UI.Core.Theme
         {
             base.OnLoad(e);
 
-            if (!DesignMode)
+            if (!IsInDesignMode)
             {
                 this.Visible = false;
                 _transition.ShowSync(this);
