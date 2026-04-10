@@ -117,7 +117,7 @@ namespace SmartRoutines.UI.Forms
             btnSidebarCollapse.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnSidebarCollapse.Font = new Font("Segoe UI", 9F);
             btnSidebarCollapse.ForeColor = Color.White;
-            btnSidebarCollapse.Location = new Point(-15, 25);
+            btnSidebarCollapse.Location = new Point(-4, 33);
             btnSidebarCollapse.Margin = new Padding(3, 4, 3, 4);
             btnSidebarCollapse.Name = "btnSidebarCollapse";
             btnSidebarCollapse.ShadowDecoration.CustomizableEdges = customizableEdges17;
@@ -387,8 +387,8 @@ namespace SmartRoutines.UI.Forms
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1463, 960);
             Controls.Add(pnlMainContent);
-            Controls.Add(pnlHeader);
             Controls.Add(pnlSidebar);
+            Controls.Add(pnlHeader);
             FormBorderStyle = FormBorderStyle.None;
             Margin = new Padding(3, 4, 3, 4);
             MinimumSize = new Size(1170, 800);
