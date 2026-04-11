@@ -1,4 +1,3 @@
-using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
@@ -12,6 +11,11 @@ namespace SmartRoutines.UI
         static void Main()
         {
             ApplicationConfiguration.Initialize();
+
+            //var mainForm = new Form();
+            //mainForm.Controls.Add(new UC_ActionsMain());
+            //Application.Run(mainForm);
+
             Application.Run(new FrmMain());
         }
     }
