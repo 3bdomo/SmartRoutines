@@ -44,15 +44,17 @@
             // 
             pnlHeader.Controls.Add(lblTitle);
             pnlHeader.CustomizableEdges = customizableEdges1;
+            _transition.SetDecoration(pnlHeader, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlHeader.Location = new Point(0, 0);
             pnlHeader.Name = "pnlHeader";
             pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            pnlHeader.Size = new Size(900, 74);
+            pnlHeader.Size = new Size(2319, 74);
             pnlHeader.TabIndex = 0;
             // 
             // lblTitle
             // 
             lblTitle.BackColor = Color.Transparent;
+            _transition.SetDecoration(lblTitle, Guna.UI2.AnimatorNS.DecorationType.None);
             lblTitle.Location = new Point(16, 14);
             lblTitle.Name = "lblTitle";
             lblTitle.Size = new Size(236, 43);
@@ -63,6 +65,7 @@
             // 
             pnlContent.Controls.Add(flowItems);
             pnlContent.CustomizableEdges = customizableEdges3;
+            _transition.SetDecoration(pnlContent, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlContent.Location = new Point(0, 80);
             pnlContent.Name = "pnlContent";
             pnlContent.ShadowDecoration.CustomizableEdges = customizableEdges4;
@@ -71,9 +74,10 @@
             // 
             // flowItems
             // 
+            _transition.SetDecoration(flowItems, Guna.UI2.AnimatorNS.DecorationType.None);
             flowItems.Location = new Point(0, 0);
             flowItems.Name = "flowItems";
-            flowItems.Size = new Size(900, 420);
+            flowItems.Size = new Size(2319, 808);
             flowItems.TabIndex = 0;
             // 
             // UC_ExecutionHistory
@@ -82,8 +86,10 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(pnlContent);
             Controls.Add(pnlHeader);
+            _transition.SetDecoration(this, Guna.UI2.AnimatorNS.DecorationType.None);
+            MinimumSize = new Size(2349, 388);
             Name = "UC_ExecutionHistory";
-            Size = new Size(900, 500);
+            Size = new Size(2349, 891);
             pnlHeader.ResumeLayout(false);
             pnlHeader.PerformLayout();
             pnlContent.ResumeLayout(false);

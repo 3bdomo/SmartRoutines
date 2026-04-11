@@ -54,7 +54,7 @@
             pnlHeader.Location = new Point(0, 0);
             pnlHeader.Name = "pnlHeader";
             pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges4;
-            pnlHeader.Size = new Size(900, 112);
+            pnlHeader.Size = new Size(2349, 112);
             pnlHeader.TabIndex = 0;
             // 
             // btnClearLogs
@@ -101,9 +101,9 @@
             _transition.SetDecoration(ucConsole, Guna.UI2.AnimatorNS.DecorationType.None);
             ucConsole.Font = new Font("Segoe UI", 9F);
             ucConsole.ForeColor = Color.FromArgb(255, 255, 255);
-            ucConsole.Location = new Point(20, 596);
+            ucConsole.Location = new Point(29, 592);
             ucConsole.Name = "ucConsole";
-            ucConsole.Size = new Size(880, 464);
+            ucConsole.Size = new Size(2349, 464);
             ucConsole.TabIndex = 3;
             // 
             // pnlLogsArea
@@ -113,7 +113,7 @@
             pnlLogsArea.Location = new Point(20, 144);
             pnlLogsArea.Name = "pnlLogsArea";
             pnlLogsArea.ShadowDecoration.CustomizableEdges = customizableEdges8;
-            pnlLogsArea.Size = new Size(849, 425);
+            pnlLogsArea.Size = new Size(2349, 425);
             pnlLogsArea.TabIndex = 4;
             // 
             // UC_LogsPage
@@ -127,7 +127,7 @@
             Controls.Add(pnlHeader);
             _transition.SetDecoration(this, Guna.UI2.AnimatorNS.DecorationType.None);
             Name = "UC_LogsPage";
-            Size = new Size(900, 1063);
+            Size = new Size(2349, 1424);
             pnlHeader.ResumeLayout(false);
             pnlHeader.PerformLayout();
             ResumeLayout(false);
