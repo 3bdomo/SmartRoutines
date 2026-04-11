@@ -1,4 +1,3 @@
-using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
@@ -11,30 +10,13 @@ namespace SmartRoutines.UI
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
+            ApplicationConfiguration.Initialize();
 
-            //ApplicationConfiguration.Initialize();
+            //var mainForm = new Form();
+            //mainForm.Controls.Add(new UC_ActionsMain());
+            //Application.Run(mainForm);
 
-            //// Create the dashboard control
-            //var dashboard = new UC_Dashboard();
-            //var statcard = new UC_StatCard();
-            //var routin = new UC_RoutineCard();
-
-            //// Create a Form to host the control
-            //var mainForm = new Form
-            //{
-            //    Text = "SmartRoutines Dashboard",
-            //    StartPosition = FormStartPosition.CenterScreen,
-            //    WindowState = FormWindowState.Maximized
-            //};
-
-            //dashboard.Dock = DockStyle.Fill;
-            //mainForm.Controls.Add(statcard);
-            var form = new Form1();
-            form.Controls.Add(new UC_ActionsMain() { Dock = DockStyle.Fill });
-
-            Application.Run(form);
+            Application.Run(new FrmMain());
         }
     }
 }

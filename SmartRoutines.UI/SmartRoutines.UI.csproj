@@ -19,7 +19,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Guna.UI2.WinForms" Version="2.0.4.7" />
+    <Content Include="Resources\icon\check-circle.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\icon\cross-circle.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\icon\ErrorIcon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\icon\progress-complete.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\icon\app-logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -27,5 +41,9 @@
       <SubType>UserControl</SubType>
     </Compile>
   </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Guna.UI2.WinForms" Version="2.0.4.7" />
+	</ItemGroup>
 
 </Project>

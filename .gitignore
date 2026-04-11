@@ -480,3 +480,9 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Design and Documentation
+SmartRoutines_UI_Spec.md
+SmartRoutines_UI_Docs.docx.pdf
+allColors.html
+

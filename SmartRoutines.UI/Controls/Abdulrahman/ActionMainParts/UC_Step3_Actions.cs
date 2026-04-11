@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using Guna.UI2.WinForms;
+﻿using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls.Step3;
@@ -68,7 +63,7 @@ public partial class UC_Step3_Actions : SmartUserControl
             IconText = "WB",
             PlaceholderText = "https://example.com"
         },
-        
+
         new ActionTemplate
         {
             Title = "Close Application",
