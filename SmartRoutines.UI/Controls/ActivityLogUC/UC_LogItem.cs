@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualBasic.Logging;
-using SmartRoutines.Core.Enums;
-using SmartRoutines.Core.Models;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.UI.Core.Healper;
 using SmartRoutines.UI.Core.Theme;
 using System;

@@ -1,6 +1,6 @@
-﻿using SmartRoutines.Core.Enums;
+﻿using SmartRoutines.Core.Domain.Enums;
 
-namespace SmartRoutines.Core.Models
+namespace SmartRoutines.Core.Domain.Entities
 {
     /// <summary>
     /// Represents an immutable historical record of a routine's execution attempt or system event.
@@ -36,8 +36,6 @@ namespace SmartRoutines.Core.Models
         /// Gets the display name of the routine captured exactly at the moment of execution.
         /// </summary>
         /// <value>A string up to 100 characters.</value>
-        //[Required]
-        //[MaxLength(100)]
         public string RoutineName { get; private set; }
 
         /// <summary>
@@ -50,7 +48,6 @@ namespace SmartRoutines.Core.Models
         /// Gets detailed diagnostic information, success messages, or exception stack traces.
         /// </summary>
         /// <value>A string up to 500 characters.</value>
-        //[MaxLength(500)]
         public string Message { get; private set; }
 
         /// <summary>

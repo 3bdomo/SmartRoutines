@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Models;
+﻿using SmartRoutines.Core.Domain.Entities;
 
 namespace SmartRoutines.Core.Interfaces.Data;
 

@@ -1,4 +1,4 @@
-﻿namespace SmartRoutines.Core.Models
+﻿namespace SmartRoutines.Core.Domain.Entities
 {
     /// <summary>
     /// Represents the global configuration and user preferences for the application.
@@ -45,16 +45,12 @@
         /// Gets the visual theme applied to the application's user interface.
         /// </summary>
         /// <value>A string representing the theme name (e.g., "Dark", "Light"). Default is "Dark".</value>
-        //[Required]
-        //[MaxLength(50)]
         public string Theme { get; private set; }
 
         /// <summary>
         /// Gets the default language code for the application interface (e.g., "en-US", "ar-EG").
         /// </summary>
         /// <value>A 5-character string representing the culture code.</value>
-        //[Required]
-        //[MaxLength(10)]
         public string DefaultLanguage { get; private set; }
 
         /// <summary>

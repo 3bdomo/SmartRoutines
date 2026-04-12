@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.Exceptions;
 using SmartRoutines.Core.Interfaces;
-using SmartRoutines.Core.Models;
 
 namespace SmartRoutines.Logic
 {

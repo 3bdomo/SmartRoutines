@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace SmartRoutines.Core.Models;
+﻿namespace SmartRoutines.Core.Domain.Models;
 
 /// <summary>
 /// Provides runtime metadata for executing a routine action.

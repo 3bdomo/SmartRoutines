@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Enums;
+﻿using SmartRoutines.Core.Domain.Enums;
 
 namespace SmartRoutines.Core.Exceptions;
 

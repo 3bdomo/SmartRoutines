@@ -1,6 +1,6 @@
-﻿using SmartRoutines.Core.Enums;
+﻿using SmartRoutines.Core.Domain.Enums;
 
-namespace SmartRoutines.Core.Models
+namespace SmartRoutines.Core.Domain.Entities
 {
     /// <summary>
     /// Represents a high-level automation workflow consisting of a trigger and a sequence of actions.
@@ -16,14 +16,16 @@ namespace SmartRoutines.Core.Models
         /// <summary>
         /// The display name of the routine.
         /// </summary>
-        //[Required]
-        //[MaxLength(100)]
         public string Name { get; private set; }
+
+        /// <summary>
+        /// Gets the description associated with the current instance.
+        /// </summary>
+        public string Description { get; private set; }
 
         /// <summary>
         /// File path or identifier for the routine's visual icon.
         /// </summary>
-        //[MaxLength(255)]
         public string IconPath { get; private set; }
 
         /// <summary>
@@ -60,12 +62,16 @@ namespace SmartRoutines.Core.Models
         /// <param name="triggerType">The type of trigger to monitor.</param>
         /// <param name="triggerConfig">JSON configuration for the trigger.</param>
         /// <exception cref="ArgumentException">Thrown if name is null or whitespace.</exception>
-        public Routine(string name, string iconPath, TriggerType triggerType, string triggerConfig)
+        public Routine(string name, string description, string iconPath, TriggerType triggerType, string triggerConfig)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Routine name cannot be null or empty.");
 
+            if (string.IsNullOrWhiteSpace(triggerConfig))
+                throw new ArgumentException("Trigger configuration cannot be empty.");
+
             Name = name;
+            Description = description;
             IconPath = iconPath;
             TriggerType = triggerType;
             TriggerConfig = triggerConfig;
@@ -108,9 +114,10 @@ namespace SmartRoutines.Core.Models
         /// </summary>
         /// <param name="name">New name for the routine.</param>
         /// <param name="iconPath">New icon path.</param>
-        public void UpdateDetails(string name, string iconPath)
+        public void UpdateDetails(string name, string description, string iconPath)
         {
             Name = name;
+            Description = description;
             IconPath = iconPath;
             UpdatedAt = DateTime.UtcNow;
         }

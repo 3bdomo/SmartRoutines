@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.Core.Interfaces.Data;
-using SmartRoutines.Core.Models;
 
 namespace SmartRoutines.Data.Repositories
 {

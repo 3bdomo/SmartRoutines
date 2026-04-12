@@ -1,6 +1,6 @@
-﻿using SmartRoutines.Core.Enums;
+﻿using SmartRoutines.Core.Domain.Enums;
 
-namespace SmartRoutines.Core.Models
+namespace SmartRoutines.Core.Domain.Entities
 {
 
     /// <summary>
@@ -37,7 +37,6 @@ namespace SmartRoutines.Core.Models
         /// Using a single string column for polymorphic data prevents database schema bloat.
         /// The specific Executor is responsible for parsing this string correctly.
         /// </remarks>
-        //[MaxLength(1000)]
         public string Arguments { get; private set; }
 
         /// <summary>
@@ -56,18 +55,18 @@ namespace SmartRoutines.Core.Models
         /// Gets the navigation property for the parent routine, allowing Entity Framework Core to perform JOINs automatically.
         /// </summary>
         /// <value>The parent <see cref="Routine"/> object, or <c>null</c> if not explicitly loaded (Lazy/Explicit Loading).</value>
-        //[ForeignKey(nameof(RoutineId))]
         public Routine? Routine { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ActionEntry"/> class with strict validation.
         /// </summary>
+        /// <param name="routineId">The unique identifier of the parent routine.</param>
         /// <param name="type">The type of action to execute.</param>
         /// <param name="arguments">The parameters needed for the action (e.g., file path, URL).</param>
         /// <param name="executionOrder">The order in the execution pipeline (must be greater than 0).</param>
         /// <exception cref="ArgumentNullException">Thrown if the arguments parameter is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the execution order is less than 1.</exception>
-        public ActionEntry(ActionType type, string arguments, int executionOrder)
+        public ActionEntry(Guid routineId, ActionType type, string arguments, int executionOrder)
         {
             if (arguments == null)
                 throw new ArgumentNullException(nameof(arguments), "Action arguments cannot be null. Use an empty string if no arguments are required.");
@@ -75,6 +74,7 @@ namespace SmartRoutines.Core.Models
             if (executionOrder < 1)
                 throw new ArgumentOutOfRangeException(nameof(executionOrder), "Execution order must be 1 or greater.");
 
+            RoutineId = routineId;
             Type = type;
             Arguments = arguments;
             ExecutionOrder = executionOrder;

@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Enums;
+﻿using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.UI.Core.Theme;
 using System;
 using System.Collections.Generic;

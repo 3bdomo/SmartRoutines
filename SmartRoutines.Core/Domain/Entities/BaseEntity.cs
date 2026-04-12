@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SmartRoutines.Core.Models
+﻿namespace SmartRoutines.Core.Domain.Entities
 {
     /// <summary>
     /// Serves as the base class for all domain entities, providing essential tracking and 
@@ -21,7 +15,6 @@ namespace SmartRoutines.Core.Models
         /// Gets the globally unique identifier for the entity.
         /// </summary>
         /// <value>A <see cref="Guid"/> that serves as the Primary Key in the database.</value>
-        //[Key]
         public Guid Id { get; protected set; }
 
         /// <summary>

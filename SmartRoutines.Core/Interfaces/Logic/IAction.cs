@@ -1,5 +1,6 @@
-﻿using SmartRoutines.Core.Enums;
-using SmartRoutines.Core.Models;
+﻿using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Models;
+using SmartRoutines.Core.Enums;
 
 namespace SmartRoutines.Core.Interfaces;
 

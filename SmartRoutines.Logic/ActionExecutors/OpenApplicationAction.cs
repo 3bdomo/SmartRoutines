@@ -1,9 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
-using SmartRoutines.Core.Enums;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.Exceptions;
 using SmartRoutines.Core.Interfaces;
-using SmartRoutines.Core.Models;
 
 namespace SmartRoutines.Logic.ActionExecutors;
 

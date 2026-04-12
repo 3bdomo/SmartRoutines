@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Interfaces.Data;
-using SmartRoutines.Core.Models;
 
 namespace SmartRoutines.Data.Repositories
 {
@@ -14,8 +15,8 @@ namespace SmartRoutines.Data.Repositories
         public MockRoutineRepository()
         {
             // Add a default routine for demonstration
-            var dummyRoutine = new Routine("Morning Launch", "icon.png", Core.Enums.TriggerType.Time, "{\"Time\":\"09:00\"}");
-            dummyRoutine.AddAction(new ActionEntry(Core.Enums.ActionType.LaunchApp, "notepad.exe", 1));
+            var dummyRoutine = new Routine("Morning Launch", "icon.png", TriggerType.Time, "{\"Time\":\"09:00\"}");
+            dummyRoutine.AddAction(new ActionEntry(ActionType.LaunchApp, "notepad.exe", 1));
             _routines.Add(dummyRoutine);
         }
       

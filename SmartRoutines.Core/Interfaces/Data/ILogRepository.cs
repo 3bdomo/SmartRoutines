@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using SmartRoutines.Core.Models;
+using SmartRoutines.Core.Domain.Entities;
 
 namespace SmartRoutines.Core.Interfaces.Data
 {
