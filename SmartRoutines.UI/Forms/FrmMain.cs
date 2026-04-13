@@ -175,16 +175,19 @@ namespace SmartRoutines.UI.Forms
             }
         }
 
+        private UserControl? _currentPage;
+
         public void DisplayPage(UserControl page)
         {
-            if (pnlMainContent.Controls.Count > 0)
+            if (_currentPage != null && pnlMainContent.Controls.Contains(_currentPage))
             {
-                var oldPage = pnlMainContent.Controls[0];
-                pnlMainContent.Controls.Remove(oldPage);
-                oldPage.Dispose();
+                pnlMainContent.Controls.Remove(_currentPage);
+                _currentPage.Dispose();
             }
+            _currentPage = page;
             page.Dock = DockStyle.Fill;
             pnlMainContent.Controls.Add(page);
+            page.SendToBack(); // Force page to let Headers safely push it down
         }
 
         private void SetActiveNavButton(Guna2Button btn)
@@ -475,7 +478,7 @@ namespace SmartRoutines.UI.Forms
 
             var btnCreateNew = new Guna.UI2.WinForms.Guna2GradientButton
             {
-                Text = "＋ Create New Routine",
+                Text = "Add New Routine",
                 Font = SmartTheme.FontSmallBold,
                 ForeColor = Color.White,
                 Size = new Size(170, 40),
@@ -485,6 +488,7 @@ namespace SmartRoutines.UI.Forms
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 0, 16, 0)
             };
+            btnCreateNew.Click += btnCreateNew_Click;
 
             var btnTheme = new Guna.UI2.WinForms.Guna2Button
             {

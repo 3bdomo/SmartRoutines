@@ -14,8 +14,24 @@ namespace SmartRoutines.UI.Controls
 
         public UC_StatCard()
         {
-            InitializeComponent();
+            InitializeComponent(); // MUST keep designer components
+            this.SuspendLayout();
+            
+            this.Size = new Size(220, 110);
+            this.MinimumSize = new Size(180, 110);
+            this.BackColor = Color.Transparent;
+            this.Margin = new Padding(0, 0, 20, 20);
+
+            // Configure the Designer instances rather than replacing them!
+            pnlCard.BorderRadius = 8;
+            pnlCard.CustomBorderThickness = new Padding(0, 4, 0, 0);
+            pnlCard.UseTransparentBackground = false; // Disable transparency bug
+            
+            lblTitle.BackColor = Color.Transparent; // Draws exactly over the panel's custom color
+            lblValue.BackColor = Color.Transparent;
+            
             ApplyTheme();
+            this.ResumeLayout(false);
         }
 
         [Category("Data")]
@@ -41,7 +57,6 @@ namespace SmartRoutines.UI.Controls
                 _accentColor = value;
                 pnlCard.BorderColor = value;
                 pnlCard.CustomBorderColor = value; 
-                pnlCard.CustomBorderThickness = new Padding(0, 4, 0, 0); // Thicker top border for highlight
             }
         }
 
@@ -53,25 +68,24 @@ namespace SmartRoutines.UI.Controls
             {
                 _cardColor = value;
                 pnlCard.FillColor = value;
+                lblTitle.BackColor = value;
+                lblValue.BackColor = value;
             }
         }
 
         private void ApplyTheme()
         {
-            this.BackColor = Color.Transparent;
-
-            // Card Panel Styling
             pnlCard.FillColor = _cardColor;
+            lblTitle.BackColor = _cardColor;
+            lblValue.BackColor = _cardColor;
+
             pnlCard.BorderColor = _accentColor;
-            pnlCard.BorderRadius = SmartTheme.RadiusSmall;
-            pnlCard.CustomBorderThickness = new Padding(0, 4, 0, 0); 
             pnlCard.CustomBorderColor = _accentColor;
 
-            // Typography
-            lblTitle.Font = SmartTheme.FontBody;
+            lblTitle.Font = SmartTheme.FontSmallBold;
             lblTitle.ForeColor = SmartTheme.TextSecondary;
             
-            lblValue.Font = new Font("Segoe UI", 24f, FontStyle.Bold);
+            lblValue.Font = new Font("Segoe UI", 28f, FontStyle.Bold);
             lblValue.ForeColor = SmartTheme.TextPrimary;
         }
     }

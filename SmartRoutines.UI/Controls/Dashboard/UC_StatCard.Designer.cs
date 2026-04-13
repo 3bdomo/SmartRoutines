@@ -38,6 +38,7 @@ namespace SmartRoutines.UI.Controls
             // 
             // pbIcon
             // 
+            this.pbIcon.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.pbIcon.BackColor = System.Drawing.Color.Transparent;
             this.pbIcon.Location = new System.Drawing.Point(150, 16);
             this.pbIcon.Name = "pbIcon";

@@ -86,14 +86,16 @@ namespace SmartRoutines.UI.Controls
             this.flpStatCards.Padding = new System.Windows.Forms.Padding(26, 10, 26, 10);
             this.flpStatCards.Size = new System.Drawing.Size(1000, 140);
             this.flpStatCards.TabIndex = 1;
-            this.flpStatCards.WrapContents = false;
+            this.flpStatCards.WrapContents = true;
+            this.flpStatCards.AutoSize = true;
+            this.flpStatCards.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             // 
             // statCard1
             // 
             this.statCard1.AccentColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(120)))), ((int)(((byte)(212)))));
             this.statCard1.CardColor = System.Drawing.Color.FromArgb(((int)(((byte)(13)))), ((int)(((byte)(23)))), ((int)(((byte)(38)))));
             this.statCard1.Location = new System.Drawing.Point(26, 10);
-            this.statCard1.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
+            this.statCard1.Margin = new System.Windows.Forms.Padding(0, 0, 20, 20);
             this.statCard1.Name = "statCard1";
             this.statCard1.Size = new System.Drawing.Size(200, 110);
             this.statCard1.TabIndex = 0;
@@ -105,7 +107,7 @@ namespace SmartRoutines.UI.Controls
             this.statCard2.AccentColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
             this.statCard2.CardColor = System.Drawing.Color.FromArgb(((int)(((byte)(14)))), ((int)(((byte)(30)))), ((int)(((byte)(22)))));
             this.statCard2.Location = new System.Drawing.Point(246, 10);
-            this.statCard2.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
+            this.statCard2.Margin = new System.Windows.Forms.Padding(0, 0, 20, 20);
             this.statCard2.Name = "statCard2";
             this.statCard2.Size = new System.Drawing.Size(200, 110);
             this.statCard2.TabIndex = 1;
@@ -117,7 +119,7 @@ namespace SmartRoutines.UI.Controls
             this.statCard3.AccentColor = System.Drawing.Color.FromArgb(((int)(((byte)(139)))), ((int)(((byte)(92)))), ((int)(((byte)(246)))));
             this.statCard3.CardColor = System.Drawing.Color.FromArgb(((int)(((byte)(23)))), ((int)(((byte)(15)))), ((int)(((byte)(36)))));
             this.statCard3.Location = new System.Drawing.Point(466, 10);
-            this.statCard3.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
+            this.statCard3.Margin = new System.Windows.Forms.Padding(0, 0, 20, 20);
             this.statCard3.Name = "statCard3";
             this.statCard3.Size = new System.Drawing.Size(200, 110);
             this.statCard3.TabIndex = 2;
@@ -129,7 +131,7 @@ namespace SmartRoutines.UI.Controls
             this.statCard4.AccentColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(156)))), ((int)(((byte)(18)))));
             this.statCard4.CardColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(21)))), ((int)(((byte)(11)))));
             this.statCard4.Location = new System.Drawing.Point(686, 10);
-            this.statCard4.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
+            this.statCard4.Margin = new System.Windows.Forms.Padding(0, 0, 20, 20);
             this.statCard4.Name = "statCard4";
             this.statCard4.Size = new System.Drawing.Size(200, 110);
             this.statCard4.TabIndex = 3;
@@ -151,6 +153,7 @@ namespace SmartRoutines.UI.Controls
             // 
             // flpRoutineCards
             // 
+            this.flpRoutineCards.AutoScroll = true;
             this.flpRoutineCards.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flpRoutineCards.Location = new System.Drawing.Point(0, 280);
             this.flpRoutineCards.Name = "flpRoutineCards";

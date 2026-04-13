@@ -98,6 +98,7 @@ namespace SmartRoutines.UI.Controls
             // 
             // lblDescription
             // 
+            this.lblDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.lblDescription.AutoEllipsis = true;
             this.lblDescription.Location = new System.Drawing.Point(82, 48);
             this.lblDescription.Name = "lblDescription";
@@ -107,11 +108,12 @@ namespace SmartRoutines.UI.Controls
             // 
             // pnlDivider
             // 
+            this.pnlDivider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
+            this.pnlDivider.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
             this.pnlDivider.Location = new System.Drawing.Point(24, 96);
             this.pnlDivider.Name = "pnlDivider";
             this.pnlDivider.Size = new System.Drawing.Size(292, 60);
             this.pnlDivider.TabIndex = 10;
-            this.pnlDivider.BackColor = System.Drawing.Color.FromArgb(50, 50, 50); // Muted divider box
             // 
             // lblSchedule
             // 
