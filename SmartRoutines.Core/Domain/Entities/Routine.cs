@@ -1,4 +1,5 @@
 ﻿using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Exceptions;
 
 namespace SmartRoutines.Core.Domain.Entities
 {
@@ -68,10 +69,10 @@ namespace SmartRoutines.Core.Domain.Entities
         public Routine(string name, string description, string iconPath, TriggerType triggerType, string triggerConfig)
         {
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Routine name cannot be null or empty.");
+                throw new BusinessRuleException("Routine name cannot be null or empty.");
 
             if (string.IsNullOrWhiteSpace(triggerConfig))
-                throw new ArgumentException("Trigger configuration cannot be empty.");
+                throw new BusinessRuleException("Trigger configuration cannot be empty.");
 
             Name = name;
             Description = description;
