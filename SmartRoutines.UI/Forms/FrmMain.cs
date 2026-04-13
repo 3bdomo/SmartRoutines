@@ -488,7 +488,7 @@ namespace SmartRoutines.UI.Forms
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 0, 16, 0)
             };
-            btnCreateNew.Click += btnCreateNew_Click;
+            //btnCreateNew.Click += btnCreateNew_Click;
 
             var btnTheme = new Guna.UI2.WinForms.Guna2Button
             {
