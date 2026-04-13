@@ -30,4 +30,8 @@
     <ProjectReference Include="..\SmartRoutines.Core\SmartRoutines.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Repositories\Mocks\" />
+  </ItemGroup>
+
 </Project>

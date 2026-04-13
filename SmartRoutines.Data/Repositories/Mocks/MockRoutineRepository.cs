@@ -22,19 +22,23 @@ namespace SmartRoutines.Data.Repositories
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(Guid id)
+        public void Delete(Routine routine)
         {
-            var routine = _routines.FirstOrDefault(r => r.Id == id);
             if (routine != null)
             {
                 routine.SoftDelete();
             }
-            return Task.CompletedTask;
         }
 
-        public Task<List<Routine>> GetAllAsync()
+        public Task<IEnumerable<Routine>> GetActiveNotDeletedWithActionsAsync()
         {
-            return Task.FromResult(_routines.Where(r => !r.IsDeleted).ToList());
+            var result = _routines.Where(r => !r.IsDeleted && r.IsActive);
+            return Task.FromResult(result.AsEnumerable());
+        }
+
+        public Task<IReadOnlyList<Routine>> GetAllAsync()
+        {
+            return Task.FromResult((IReadOnlyList<Routine>)_routines.Where(r => !r.IsDeleted).ToList());
         }
 
         public Task<Routine?> GetByIdAsync(Guid id)
@@ -42,15 +46,25 @@ namespace SmartRoutines.Data.Repositories
             return Task.FromResult(_routines.FirstOrDefault(r => r.Id == id && !r.IsDeleted));
         }
 
-        public Task UpdateAsync(Routine routine)
+        public Task<Routine?> GetByIdWithActionsAsync(Guid id)
+        {
+            var routine = _routines.FirstOrDefault(r => r.Id == id && !r.IsDeleted);
+            return Task.FromResult(routine);
+        }
+
+        public Task<bool> IsNameUniqueAsync(string name, Guid? excludeId = null)
+        {
+            var exists = _routines.Any(r => !r.IsDeleted && string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase) && (excludeId == null || r.Id != excludeId.Value));
+            return Task.FromResult(!exists);
+        }
+
+        public void Update(Routine routine)
         {
             var existing = _routines.FirstOrDefault(r => r.Id == routine.Id);
             if (existing != null)
             {
-                existing.UpdateDetails(routine.Name, "", routine.IconPath);
-                // In a real DB we'd update other properties too
+                existing.UpdateDetails(routine.Name, routine.Description, routine.IconPath);
             }
-            return Task.CompletedTask;
         }
     }
 }
