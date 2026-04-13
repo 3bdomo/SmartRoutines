@@ -57,6 +57,8 @@ namespace SmartRoutines.Core.Domain.Entities
         /// <value>The parent <see cref="Routine"/> object, or <c>null</c> if not explicitly loaded (Lazy/Explicit Loading).</value>
         public Routine? Routine { get; private set; }
 
+        private ActionEntry() { } // Private parameterless constructor for EF Core
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ActionEntry"/> class with strict validation.
         /// </summary>

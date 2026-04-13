@@ -1,21 +1,10 @@
-﻿using SmartRoutines.Core.Enums;
-using SmartRoutines.Core.Models;
-using SmartRoutines.UI.Core.Theme;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls
 {
-    public partial class UC_ExecutionHistory : SmartUserControl   
+    public partial class UC_ExecutionHistory : SmartUserControl
     {
-      
+
         public UC_ExecutionHistory()
         {
             InitializeComponent();
@@ -32,7 +21,7 @@ namespace SmartRoutines.UI.Controls
             flowItems.AutoScroll = true;
             flowItems.Padding = new Padding(0);
         }
-        
+
         //public void LoadLogs(List<ActivityLog> logs)
         //{
         //    flowItems.Controls.Clear();
@@ -47,4 +36,4 @@ namespace SmartRoutines.UI.Controls
         //}
         // ppendLine("Error: backup.bat not found", LogStatus.Error);
     }
-    }
+}

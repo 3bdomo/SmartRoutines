@@ -59,5 +59,12 @@
             IsDeleted = true;
             UpdatedAt = DateTime.UtcNow;
         }
+        /// <summary>
+        /// Marks the entity as updated by setting the <see cref="UpdatedAt"/> timestamp to the current UTC time.
+        /// </summary>
+        public void MarkUpdated()
+        {
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

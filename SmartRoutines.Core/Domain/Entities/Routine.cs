@@ -54,6 +54,9 @@ namespace SmartRoutines.Core.Domain.Entities
         /// </remarks>
         public IReadOnlyCollection<ActionEntry> Actions => _actions.AsReadOnly();
 
+        // private parameterless constructor for EF Core
+        private Routine() { }
+
         /// <summary>
         /// Initializes a new Routine instance.
         /// </summary>

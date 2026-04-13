@@ -50,6 +50,8 @@ namespace SmartRoutines.Core.Domain.Entities
         /// <value>A string up to 500 characters.</value>
         public string Message { get; private set; }
 
+        private ActivityLog() { } // Private parameterless constructor for EF Core
+
         /// <summary>
         /// Initializes a new, immutable instance of the <see cref="ActivityLog"/> class.
         /// </summary>
