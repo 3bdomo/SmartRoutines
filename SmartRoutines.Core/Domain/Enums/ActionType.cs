@@ -9,5 +9,6 @@
         Mute = 4,
         KillProcess = 5,
         Notification = 6,
+        RunCommand = 7,
     }
 }
