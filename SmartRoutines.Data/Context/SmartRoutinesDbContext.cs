@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using SmartRoutines.Core.Domain.Entities;
 
 namespace SmartRoutines.Data.Context
@@ -12,18 +11,9 @@ namespace SmartRoutines.Data.Context
         public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
         public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        public SmartRoutinesDbContext(DbContextOptions<SmartRoutinesDbContext> options)
+            : base(options)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                var config = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json")
-                    .Build();
-
-                var connectionString = config.GetConnectionString("DefaultConnection");
-                optionsBuilder.UseSqlServer(connectionString);
-            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
