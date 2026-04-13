@@ -1,4 +1,11 @@
-﻿using System;
+﻿using Guna.UI2.WinForms;
+using Microsoft.Win32;
+using SmartRoutines.UI.Core.Theme;
+using System.Drawing.Drawing2D;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -14,11 +21,11 @@ using Guna.UI2.WinForms;
 
 namespace SmartRoutines.UI.Controls
 {
-    // ══════════════════════════════════════════════════════════════════════════
-    //  ENUMS & CONSTANTS
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    //  ENUMS & CONSTANTS
+    // ══════════════════════════════════════════════════════════════════════════
 
-    public enum DialogIconType { Information, Warning, Error, Success }
+    public enum DialogIconType { Information, Warning, Error, Success }
     public enum CustomDialogResult { Confirm, Cancel }
 
     internal static class AppConstants
@@ -32,11 +39,11 @@ namespace SmartRoutines.UI.Controls
         public const string AppCopyright = "© 2026 Enterprise Automation Engine";
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  DTOs & SERIALIZER
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    //  DTOs & SERIALIZER
+    // ══════════════════════════════════════════════════════════════════════════
 
-    public sealed class RoutineExportDto
+    public sealed class RoutineExportDto
     {
         public string Name { get; set; } = string.Empty;
         public string IconPath { get; set; } = string.Empty;
@@ -78,18 +85,18 @@ namespace SmartRoutines.UI.Controls
         public static List<RoutineExportDto> Deserialize(string json)
         {
             var backup = JsonSerializer.Deserialize<RoutineBackupFile>(json, _options)
-                         ?? throw new JsonException("Backup file is empty or invalid.");
+                  ?? throw new JsonException("Backup file is empty or invalid.");
             if (backup.SchemaVersion != 1)
                 throw new JsonException($"Unsupported schema version: {backup.SchemaVersion}");
             return backup.Routines;
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  SETTINGS MANAGER
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    //  SETTINGS MANAGER
+    // ══════════════════════════════════════════════════════════════════════════
 
-    public static class SettingsManager
+    public static class SettingsManager
     {
         private static readonly string _settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user_settings.json");
         private static readonly JsonSerializerOptions _opts = new() { WriteIndented = true };
@@ -166,14 +173,14 @@ namespace SmartRoutines.UI.Controls
         }
 
         private static bool Get(Dictionary<string, bool> d, string key, bool fallback)
-            => d.TryGetValue(key, out bool v) ? v : fallback;
+          => d.TryGetValue(key, out bool v) ? v : fallback;
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  SMART DIALOG
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    //  SMART DIALOG
+    // ══════════════════════════════════════════════════════════════════════════
 
-    public sealed class SmartDialog : Form
+    public sealed class SmartDialog : Form
     {
         private static readonly Color _bg = SmartTheme.Surface;
         private static readonly Color _border = SmartTheme.Border;
@@ -256,11 +263,11 @@ namespace SmartRoutines.UI.Controls
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  UC_SETTING TOGGLE ITEM (RESPONSIVE)
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    //  UC_SETTING TOGGLE ITEM
+    // ══════════════════════════════════════════════════════════════════════════
 
-    public sealed class UC_SettingToggleItem : UserControl
+    public sealed class UC_SettingToggleItem : UserControl
     {
         public string Title { get => _lblTitle.Text; set => _lblTitle.Text = value; }
         public string Subtitle { get => _lblSub.Text; set => _lblSub.Text = value; }
@@ -272,41 +279,41 @@ namespace SmartRoutines.UI.Controls
 
         public UC_SettingToggleItem(string title, string subtitle, bool initialValue = false)
         {
-            this.Dock = DockStyle.Top;
-            this.Height = 70;
+            this.Height = 75;
             this.BackColor = Color.Transparent;
+            this.Padding = new Padding(15, 0, 15, 0);
 
-            _lblTitle = new Label { Text = title, Font = SmartTheme.FontBodyBold, ForeColor = SmartTheme.TextPrimary, Location = new Point(10, 10), AutoSize = true };
-            _lblSub = new Label { Text = subtitle, Font = SmartTheme.FontSmall, ForeColor = SmartTheme.TextSecondary, Location = new Point(10, 36), AutoSize = true };
+            _lblTitle = new Label { Text = title, Font = SmartTheme.FontBodyBold, ForeColor = SmartTheme.TextPrimary, Location = new Point(15, 15), AutoSize = true };
+            _lblSub = new Label { Text = subtitle, Font = SmartTheme.FontSmall, ForeColor = SmartTheme.TextSecondary, Location = new Point(15, 41), AutoSize = true };
 
             _toggle = new Guna2ToggleSwitch
             {
                 Checked = initialValue,
-                Location = new Point(700, 22),
                 Size = new Size(50, 24),
                 CheckedState = { FillColor = SmartTheme.Primary },
                 UncheckedState = { FillColor = SmartTheme.Surface3 },
-                Anchor = AnchorStyles.Right // تثبيت في اليمين
+                Anchor = AnchorStyles.Right,
+                Cursor = Cursors.Hand
             };
 
+            _toggle.Location = new Point(this.Width - _toggle.Width - 20, 25);
             _toggle.CheckedChanged += (_, _) => ToggledChanged?.Invoke(this, _toggle.Checked);
 
-            var sep = new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = SmartTheme.Border };
+            var sep = new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = Color.FromArgb(40, SmartTheme.Border) };
 
             Controls.AddRange(new Control[] { _lblTitle, _lblSub, _toggle, sep });
 
-            // تحديث موقع الـ Toggle عند تغيير حجم العنصر
             this.SizeChanged += (s, e) => {
-                _toggle.Location = new Point(this.Width - _toggle.Width - 20, 22);
+                _toggle.Left = this.Width - _toggle.Width - 20;
             };
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  UC_SETTINGS (MAIN CLASS - FULLY RESPONSIVE)
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    //  UC_SETTINGS
+    // ══════════════════════════════════════════════════════════════════════════
 
-    public partial class UC_Settings : UserControl
+    public partial class UC_Settings : UserControl
     {
         private FlowLayoutPanel mainPanel;
 
@@ -317,19 +324,39 @@ namespace SmartRoutines.UI.Controls
             this.BackColor = SmartTheme.Background;
             this.DoubleBuffered = true;
 
+            // تمكين استلام المفاتيح
+            this.Load += (s, e) => { this.Focus(); };
+
             SettingsManager.Load();
             InitializeUI();
         }
 
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        // --- إضافة منطق الاختصارات ---
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (keyData == (Keys.Control | Keys.N)) { TriggerNewRoutine(); return true; }
-            if (keyData == (Keys.Control | Keys.T)) { TriggerThemeToggle(); return true; }
+            if (keyData == (Keys.Control | Keys.N))
+            {
+                CreateNewRoutine();
+                return true;
+            }
+            if (keyData == (Keys.Control | Keys.T))
+            {
+                ToggleTheme();
+                return true;
+            }
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        public void TriggerNewRoutine() => SmartDialog.Show(this, "New Routine", "Opening 'Create New Routine' interface...", DialogIconType.Information);
-        public void TriggerThemeToggle() => SmartDialog.Show(this, "Toggle Theme", "Switching application theme mode...", DialogIconType.Information);
+        private void CreateNewRoutine()
+        {
+            SmartDialog.Show(this, "New Routine", "Opening routine designer wizard...", DialogIconType.Information);
+        }
+
+        private void ToggleTheme()
+        {
+            // محاكاة تبديل الثيم
+            SmartDialog.Show(this, "Theme Switch", "Theme preference updated. Application will refresh visuals.", DialogIconType.Success);
+        }
 
         private void InitializeUI()
         {
@@ -344,52 +371,46 @@ namespace SmartRoutines.UI.Controls
             };
             this.Controls.Add(mainPanel);
 
-            // Responsive Logic Engine
+            // لضمان استجابة الاختصارات عند الضغط داخل أي جزء
+            mainPanel.Click += (s, e) => this.Focus();
+
             mainPanel.SizeChanged += (s, e) => {
                 mainPanel.SuspendLayout();
                 int targetWidth = mainPanel.ClientSize.Width - mainPanel.Padding.Left - mainPanel.Padding.Right - 25;
                 foreach (Control c in mainPanel.Controls)
                 {
                     if (c is RoundedPanel || c is Guna2GradientPanel || c is Panel)
-                    {
                         c.Width = targetWidth;
-                        // تحديث عناصر الـ Data Management الداخلية
-                        foreach (Control sub in c.Controls)
-                        {
-                            if (sub is Button btn && (btn.Text == "Export" || btn.Text == "Import" || btn.Text == "Clear"))
-                                btn.Left = c.Width - btn.Width - 25;
-
-                            if (sub is Label lblKey && lblKey.BackColor == SmartTheme.Surface3) // أزرار الاختصارات
-                                lblKey.Left = c.Width - lblKey.Width - 25;
-                        }
-                    }
                 }
                 mainPanel.ResumeLayout();
             };
 
-            // Headers
             mainPanel.Controls.Add(new Label { Text = "Settings", ForeColor = SmartTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 28), AutoSize = true });
             mainPanel.Controls.Add(new Label { Text = "Configure your automation preferences", ForeColor = SmartTheme.TextSecondary, Font = new Font("Segoe UI", 11), AutoSize = true, Margin = new Padding(0, 0, 0, 30) });
 
-            // Banner
             mainPanel.Controls.Add(CreateThemeBanner());
 
-            // Engine Settings
-            var startupToggle = new UC_SettingToggleItem("Auto-start on System Boot", "Launch Smart Routines when Windows starts", SettingsManager.IsAutoStartEnabled());
-            startupToggle.ToggledChanged += async (_, on) => { SettingsManager.RunAtStartup = on; await SettingsManager.SetAutoStartAsync(on); SettingsManager.Save(); };
-
             mainPanel.Controls.Add(CreateSettingsCard("Engine Settings", "⚡", new[] {
-                MakeToggle("Automation Engine", "Enable or disable all routine automation", SettingsManager.AutomationEngine, v => { SettingsManager.AutomationEngine = v; SettingsManager.Save(); }),
-                startupToggle,
-                MakeToggle("Run in Background", "Keep engine running when window is closed", SettingsManager.RunInBackground, v => { SettingsManager.RunInBackground = v; SettingsManager.Save(); })
-            }));
+        MakeToggle("Automation Engine", "Enable or disable all routine automation", SettingsManager.AutomationEngine, v => { SettingsManager.AutomationEngine = v; SettingsManager.Save(); }),
+        MakeToggle("Auto-start on System Boot", "Launch Smart Routines when Windows starts", SettingsManager.IsAutoStartEnabled(), async v => { SettingsManager.RunAtStartup = v; await SettingsManager.SetAutoStartAsync(v); SettingsManager.Save(); }),
+        MakeToggle("Run in Background", "Keep engine running when window is closed", SettingsManager.RunInBackground, v => { SettingsManager.RunInBackground = v; SettingsManager.Save(); })
+      }));
 
-            // Notifications
             mainPanel.Controls.Add(CreateSettingsCard("Notifications", "🔔", new[] {
-                MakeToggle("Routine Execution Alerts", "Show toast notifications when routines run", SettingsManager.RoutineAlerts, v => { SettingsManager.RoutineAlerts = v; SettingsManager.Save(); }),
-                MakeToggle("Error Notifications", "Get notified when routines fail", SettingsManager.ErrorNotifications, v => { SettingsManager.ErrorNotifications = v; SettingsManager.Save(); }),
-                MakeToggle("Sound Alerts", "Play sound on routine completion", SettingsManager.SoundAlerts, v => { SettingsManager.SoundAlerts = v; SettingsManager.Save(); })
-            }));
+        MakeToggle("Routine Execution Alerts", "Show toast notifications when routines run", SettingsManager.RoutineAlerts, v => { SettingsManager.RoutineAlerts = v; SettingsManager.Save(); }),
+        MakeToggle("Error Notifications", "Get notified when routines fail", SettingsManager.ErrorNotifications, v => { SettingsManager.ErrorNotifications = v; SettingsManager.Save(); }),
+        MakeToggle("Sound Alerts", "Play sound on routine completion", SettingsManager.SoundAlerts, v => { SettingsManager.SoundAlerts = v; SettingsManager.Save(); })
+      }));
+
+            mainPanel.Controls.Add(CreateSettingsCard("Security", "🛡️", new[] {
+        MakeToggle("Require Confirmation", "Ask before running destructive actions", SettingsManager.RequireConfirmation, v => { SettingsManager.RequireConfirmation = v; SettingsManager.Save(); }),
+        MakeToggle("Elevated Permissions", "Run routines with administrator rights", SettingsManager.ElevatedPermissions, v => { SettingsManager.ElevatedPermissions = v; SettingsManager.Save(); })
+      }));
+
+            mainPanel.Controls.Add(CreateSettingsCard("Developer", "🛠️", new[] {
+        MakeToggle("Debug Mode", "Show detailed execution logs", SettingsManager.DebugMode, v => { SettingsManager.DebugMode = v; SettingsManager.Save(); }),
+        MakeToggle("API Access", "Enable external API control", SettingsManager.ApiAccess, v => { SettingsManager.ApiAccess = v; SettingsManager.Save(); })
+      }));
 
             mainPanel.Controls.Add(CreateShortcutsCard());
             mainPanel.Controls.Add(CreateDataManagementCard());
@@ -406,24 +427,47 @@ namespace SmartRoutines.UI.Controls
 
         private RoundedPanel CreateSettingsCard(string title, string icon, UC_SettingToggleItem[] items)
         {
-            var card = new RoundedPanel { Height = 80 + (items.Length * 75), BackColor = SmartTheme.Surface, Margin = new Padding(0, 0, 0, 20) };
-            card.Controls.Add(new Label { Text = icon + "  " + title, Font = new Font("Segoe UI Semibold", 13), ForeColor = SmartTheme.TextPrimary, Location = new Point(20, 20), AutoSize = true, BackColor = Color.Transparent });
-            for (int i = 0; i < items.Length; i++) { items[i].Location = new Point(20, 65 + i * 75); card.Controls.Add(items[i]); }
+            int headerHeight = 65;
+            int itemHeight = 75;
+            var card = new RoundedPanel { Height = headerHeight + (items.Length * itemHeight) + 10, BackColor = SmartTheme.Surface, Margin = new Padding(0, 0, 0, 25) };
+
+            card.Controls.Add(new Label
+            {
+                Text = icon + "  " + title,
+                Font = new Font("Segoe UI Semibold", 13),
+                ForeColor = SmartTheme.TextPrimary,
+                Location = new Point(20, 20),
+                AutoSize = true,
+                BackColor = Color.Transparent
+            });
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                items[i].Location = new Point(0, headerHeight + (i * itemHeight));
+                items[i].Width = card.Width;
+                items[i].Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                card.Controls.Add(items[i]);
+            }
             return card;
         }
 
-        private static UC_SettingToggleItem MakeToggle(string t, string s, bool i, Action<bool> cb) { var item = new UC_SettingToggleItem(t, s, i); item.ToggledChanged += (_, v) => cb(v); return item; }
+        private static UC_SettingToggleItem MakeToggle(string t, string s, bool i, Action<bool> cb)
+        {
+            var item = new UC_SettingToggleItem(t, s, i);
+            item.ToggledChanged += (_, v) => cb(v);
+            return item;
+        }
 
         private RoundedPanel CreateShortcutsCard()
         {
-            var card = new RoundedPanel { Height = 180, BackColor = SmartTheme.Surface, Margin = new Padding(0, 0, 0, 20) };
-            card.Controls.Add(new Label { Text = "⌨️  Keyboard Shortcuts", Font = new Font("Segoe UI Semibold", 13), ForeColor = SmartTheme.TextPrimary, Location = new Point(20, 20), AutoSize = true, BackColor = Color.Transparent });
+            var card = new RoundedPanel { Height = 180, BackColor = SmartTheme.Surface, Margin = new Padding(0, 0, 0, 25) };
+            card.Controls.Add(new Label { Text = "⌨️  Keyboard Shortcuts", Font = new Font("Segoe UI Semibold", 13), ForeColor = SmartTheme.TextPrimary, Location = new Point(20, 20), AutoSize = true, BackColor = Color.Transparent });
             string[] names = { "Create New Routine", "Toggle Theme" }; string[] keys = { "Ctrl + N", "Ctrl + T" };
             for (int i = 0; i < 2; i++)
             {
                 int y = 75 + (i * 50);
                 card.Controls.Add(new Label { Text = names[i], Font = new Font("Segoe UI", 10.5f), ForeColor = SmartTheme.TextSecondary, Location = new Point(25, y), AutoSize = true, BackColor = Color.Transparent });
-                var lblKey = new Label { Text = keys[i], ForeColor = Color.White, BackColor = SmartTheme.Surface3, TextAlign = ContentAlignment.MiddleCenter, Size = new Size(100, 30), Location = new Point(640, y - 5), Font = new Font("Consolas", 10) };
+                var lblKey = new Label { Text = keys[i], ForeColor = Color.White, BackColor = SmartTheme.Surface3, TextAlign = ContentAlignment.MiddleCenter, Size = new Size(100, 30), Location = new Point(card.Width - 125, y - 5), Font = new Font("Consolas", 10) };
                 lblKey.Anchor = AnchorStyles.Right;
                 card.Controls.Add(lblKey);
             }
@@ -432,8 +476,8 @@ namespace SmartRoutines.UI.Controls
 
         private RoundedPanel CreateDataManagementCard()
         {
-            var card = new RoundedPanel { Height = 280, BackColor = SmartTheme.Surface, Margin = new Padding(0, 0, 0, 20) };
-            card.Controls.Add(new Label { Text = "📊  Data Management", Font = new Font("Segoe UI Semibold", 13), ForeColor = SmartTheme.TextPrimary, Location = new Point(20, 20), AutoSize = true, BackColor = Color.Transparent });
+            var card = new RoundedPanel { Height = 280, BackColor = SmartTheme.Surface, Margin = new Padding(0, 0, 0, 25) };
+            card.Controls.Add(new Label { Text = "📊  Data Management", Font = new Font("Segoe UI Semibold", 13), ForeColor = SmartTheme.TextPrimary, Location = new Point(20, 20), AutoSize = true, BackColor = Color.Transparent });
             AddDataRow(card, "Export All Routines", "Download routines as JSON file", "Export", SmartTheme.Surface3, 75, false, false, ExportRoutinesAsync);
             AddDataRow(card, "Import Routines", "Load routines from JSON file", "Import", SmartTheme.Surface3, 145, true, false, ImportRoutinesAsync);
             AddDataRow(card, "Clear History", "Delete all routine execution logs", "Clear", SmartTheme.Danger, 215, true, true, ClearHistoryAsync);
@@ -442,10 +486,10 @@ namespace SmartRoutines.UI.Controls
 
         private void AddDataRow(Panel card, string t, string d, string bt, Color bc, int y, bool hl, bool ol, Action onClick)
         {
-            if (hl) card.Controls.Add(new Panel { BackColor = SmartTheme.Border, Size = new Size(700, 1), Location = new Point(25, y - 10), Anchor = AnchorStyles.Left | AnchorStyles.Right });
+            if (hl) card.Controls.Add(new Panel { BackColor = Color.FromArgb(40, SmartTheme.Border), Size = new Size(card.Width - 50, 1), Location = new Point(25, y - 10), Anchor = AnchorStyles.Left | AnchorStyles.Right });
             card.Controls.Add(new Label { Text = t, Font = new Font("Segoe UI Semibold", 11), ForeColor = SmartTheme.TextPrimary, Location = new Point(30, y), AutoSize = true });
-            card.Controls.Add(new Label { Text = d, Font = new Font("Segoe UI", 9.5f), ForeColor = SmartTheme.TextSecondary, Location = new Point(30, y + 28), Size = new Size(600, 40) });
-            var btn = new Button { Text = bt, Location = new Point(640, y + 5), Size = new Size(100, 35), FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold), Cursor = Cursors.Hand, BackColor = ol ? Color.Transparent : bc, ForeColor = ol ? bc : Color.White };
+            card.Controls.Add(new Label { Text = d, Font = new Font("Segoe UI", 9.5f), ForeColor = SmartTheme.TextSecondary, Location = new Point(30, y + 28), Size = new Size(card.Width - 150, 40), Anchor = AnchorStyles.Left | AnchorStyles.Right });
+            var btn = new Button { Text = bt, Location = new Point(card.Width - 125, y + 5), Size = new Size(100, 35), FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold), Cursor = Cursors.Hand, BackColor = ol ? Color.Transparent : bc, ForeColor = ol ? bc : Color.White };
             btn.Anchor = AnchorStyles.Right;
             if (ol) btn.FlatAppearance.BorderColor = bc; else btn.FlatAppearance.BorderSize = 0;
             btn.Click += (_, _) => onClick?.Invoke(); card.Controls.Add(btn);
@@ -463,42 +507,44 @@ namespace SmartRoutines.UI.Controls
 
         private async void ExportRoutinesAsync()
         {
-            using var sfd = new SaveFileDialog { Filter = AppConstants.JsonFileFilter, FileName = AppConstants.ExportDefaultFileName };
-            if (sfd.ShowDialog() != DialogResult.OK) return;
             try
             {
-                var json = JsonRoutineSerializer.Serialize(new List<RoutineExportDto>());
-                await File.WriteAllTextAsync(sfd.FileName, json);
-                SmartDialog.Show(this, "Success", "Routines exported successfully.", DialogIconType.Success);
+                using SaveFileDialog sfd = new SaveFileDialog { Filter = AppConstants.JsonFileFilter, FileName = AppConstants.ExportDefaultFileName, Title = "Export Routines" };
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    var routines = new List<RoutineExportDto>();
+                    string json = JsonRoutineSerializer.Serialize(routines);
+                    await File.WriteAllTextAsync(sfd.FileName, json);
+                    SmartDialog.Show(this, "Export Success", "Your routines have been backed up successfully.", DialogIconType.Success);
+                }
             }
-            catch (Exception ex) { SmartDialog.Show(this, "Error", ex.Message, DialogIconType.Error); }
+            catch (Exception ex) { SmartDialog.Show(this, "Export Error", ex.Message, DialogIconType.Error); }
         }
 
         private async void ImportRoutinesAsync()
         {
-            using var ofd = new OpenFileDialog { Filter = AppConstants.JsonFileFilter };
-            if (ofd.ShowDialog() != DialogResult.OK) return;
             try
             {
-                string json = await File.ReadAllTextAsync(ofd.FileName);
-                var routines = JsonRoutineSerializer.Deserialize(json);
-                SmartDialog.Show(this, "Success", $"{routines.Count} routines imported.", DialogIconType.Success);
+                using OpenFileDialog ofd = new OpenFileDialog { Filter = AppConstants.JsonFileFilter, Title = "Import Routines" };
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    string json = await File.ReadAllTextAsync(ofd.FileName);
+                    var routines = JsonRoutineSerializer.Deserialize(json);
+                    SmartDialog.Show(this, "Import Success", $"{routines.Count} routines imported.", DialogIconType.Success);
+                }
             }
-            catch (Exception ex) { SmartDialog.Show(this, "Error", ex.Message, DialogIconType.Error); }
+            catch (Exception ex) { SmartDialog.Show(this, "Import Error", ex.Message, DialogIconType.Error); }
         }
 
         private async void ClearHistoryAsync()
         {
-            if (SmartDialog.Show(this, "Confirm", "Clear all execution logs?", DialogIconType.Warning, "Clear") == CustomDialogResult.Confirm)
+            if (SmartDialog.Show(this, "Confirm", "Clear all execution logs? This cannot be undone.", DialogIconType.Warning, "Clear") == CustomDialogResult.Confirm)
             {
-                await Task.Delay(500); SmartDialog.Show(this, "Done", "History cleared.", DialogIconType.Success);
+                await Task.Delay(500);
+                SmartDialog.Show(this, "Done", "History cleared.", DialogIconType.Success);
             }
         }
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    //  ROUNDED PANEL COMPONENT
-    // ══════════════════════════════════════════════════════════════════════════
 
     public class RoundedPanel : Panel
     {
@@ -510,6 +556,14 @@ namespace SmartRoutines.UI.Controls
             using var brush = new SolidBrush(BackColor);
             e.Graphics.FillPath(brush, path);
         }
-        private static GraphicsPath GetPath(Rectangle r, int rad) { var p = new GraphicsPath(); p.AddArc(r.X, r.Y, rad, rad, 180, 90); p.AddArc(r.Right - rad, r.Y, rad, rad, 270, 90); p.AddArc(r.Right - rad, r.Bottom - rad, rad, rad, 0, 90); p.AddArc(r.X, r.Bottom - rad, rad, rad, 90, 90); p.CloseFigure(); return p; }
+        private static GraphicsPath GetPath(Rectangle r, int rad)
+        {
+            var p = new GraphicsPath();
+            p.AddArc(r.X, r.Y, rad, rad, 180, 90);
+            p.AddArc(r.Right - rad, r.Y, rad, rad, 270, 90);
+            p.AddArc(r.Right - rad, r.Bottom - rad, rad, rad, 0, 90);
+            p.AddArc(r.X, r.Bottom - rad, rad, rad, 90, 90);
+            p.CloseFigure(); return p;
+        }
     }
 }
