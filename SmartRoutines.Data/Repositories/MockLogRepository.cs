@@ -9,7 +9,7 @@ namespace SmartRoutines.Data.Repositories
 {
 
 
-    public class MockLogRepository : ILogRepository
+    public class MockLogRepository : IActivityLogRepository
     {
 
         private readonly List<ActivityLog> _logs = new();

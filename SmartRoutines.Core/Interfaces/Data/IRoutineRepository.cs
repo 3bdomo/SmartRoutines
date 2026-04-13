@@ -20,6 +20,10 @@ public interface IRoutineRepository
     /// <returns>A task that represents the asynchronous operation. The task result contains the routine if found; otherwise, null.</returns>
     Task<Routine?> GetByIdAsync(Guid id);
 
+    Task<Routine?> GetByIdWithActionsAsync(Guid id);
+    Task<IEnumerable<Routine>> GetActiveNotDeletedWithActionsAsync();
+
+    Task<bool> IsNameUniqueAsync(string name, Guid? excludeId = null);
     /// <summary>
     /// Adds a new routine to the repository asynchronously.
     /// </summary>
@@ -32,12 +36,12 @@ public interface IRoutineRepository
     /// </summary>
     /// <param name="routine">The routine to update.</param>
     /// <returns>A task that represents the asynchronous update operation.</returns>
-    Task UpdateAsync(Routine routine);
+    void UpdateAsync(Routine routine);
 
     /// <summary>
     /// Deletes a routine from the repository by its unique identifier asynchronously.
     /// </summary>
     /// <param name="id">The unique identifier of the routine to delete.</param>
     /// <returns>A task that represents the asynchronous delete operation.</returns>
-    Task DeleteAsync(Guid id);
+    void DeleteAsync(Routine routine);
 }
