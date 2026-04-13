@@ -1,3 +1,4 @@
+using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
@@ -12,9 +13,10 @@ namespace SmartRoutines.UI
         {
             ApplicationConfiguration.Initialize();
 
-            //var mainForm = new Form();
-            //mainForm.Controls.Add(new UC_ActionsMain());
-            //Application.Run(mainForm);
+            //var dashboard = new UC_Dashboard();
+            //dashboard.Controls.Add(new UC_Dashboard());
+
+            //Application.Run(new Form { Controls = { dashboard } });
 
             Application.Run(new FrmMain());
         }

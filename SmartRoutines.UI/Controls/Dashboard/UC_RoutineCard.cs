@@ -9,12 +9,57 @@ namespace SmartRoutines.UI.Controls
 {
     public partial class UC_RoutineCard : SmartUserControl
     {
+        public event EventHandler StateChanged;
+
         private bool _isActive = true;
         private bool _isRunning = false;
+
+        private Guna.UI2.WinForms.Guna2GradientPanel _pnlIcon;
+        private Guna.UI2.WinForms.Guna2Panel _pnlScheduleRegion;
 
         public UC_RoutineCard()
         {
             InitializeComponent();
+            this.MinimumSize = new Size(320, 275);
+            
+            // Upgrade Primitive Icon to Figma Gradient Block
+            _pnlIcon = new Guna.UI2.WinForms.Guna2GradientPanel
+            {
+                Size = new Size(46, 46),
+                Location = new Point(24, 24),
+                BorderRadius = 12,
+                FillColor = Color.FromArgb(99, 102, 241),
+                FillColor2 = Color.FromArgb(56, 189, 248),
+                GradientMode = System.Drawing.Drawing2D.LinearGradientMode.ForwardDiagonal
+            };
+            var iconLbl = new Label { Name="iconEmoji", Text = "✨", Font = new Font("Segoe UI Emoji", 14f), AutoSize = true, BackColor = Color.Transparent, ForeColor = Color.White };
+            iconLbl.Location = new Point(10, 10);
+            _pnlIcon.Controls.Add(iconLbl);
+
+            pnlBase.Controls.Remove(pbIcon);
+            pnlBase.Controls.Add(_pnlIcon);
+
+            // Upgrade harsh gray scheduled block to modern rounded inset
+            _pnlScheduleRegion = new Guna.UI2.WinForms.Guna2Panel
+            {
+                Size = pnlDivider.Size,
+                Location = pnlDivider.Location,
+                FillColor = Color.FromArgb(24, 24, 27),
+                BorderRadius = 8,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            pnlBase.Controls.Remove(pnlDivider);
+            pnlBase.Controls.Add(_pnlScheduleRegion);
+            _pnlScheduleRegion.SendToBack();
+
+            // Reroute labels into the new rounded panel for perfect alpha transparency support
+            pnlBase.Controls.Remove(lblSchedule);
+            pnlBase.Controls.Remove(lblActions);
+            lblSchedule.Location = new Point(10, 8);
+            lblActions.Location = new Point(10, 30);
+            _pnlScheduleRegion.Controls.Add(lblSchedule);
+            _pnlScheduleRegion.Controls.Add(lblActions);
+
             ApplyTheme();
         }
 
@@ -22,7 +67,44 @@ namespace SmartRoutines.UI.Controls
         public string RoutineName
         {
             get => lblName.Text;
-            set => lblName.Text = value;
+            set
+            {
+                lblName.Text = value;
+                UpdateDynamicIcon();
+            }
+        }
+
+        private void UpdateDynamicIcon()
+        {
+            if (_pnlIcon == null || _pnlIcon.Controls.Count == 0) return;
+            var lbl = _pnlIcon.Controls["iconEmoji"] as Label;
+            if (lbl == null) return;
+
+            string name = lblName.Text.ToLower();
+            if (name.Contains("morning"))
+            {
+                lbl.Text = "☀️";
+                _pnlIcon.FillColor = Color.FromArgb(0, 120, 212);
+                _pnlIcon.FillColor2 = Color.FromArgb(100, 170, 255);
+            }
+            else if (name.Contains("focus"))
+            {
+                lbl.Text = "🎯";
+                _pnlIcon.FillColor = Color.FromArgb(139, 92, 246);
+                _pnlIcon.FillColor2 = Color.FromArgb(236, 72, 153);
+            }
+            else if (name.Contains("evening") || name.Contains("shut"))
+            {
+                lbl.Text = "🌙";
+                _pnlIcon.FillColor = Color.FromArgb(30, 41, 59);
+                _pnlIcon.FillColor2 = Color.FromArgb(15, 23, 42);
+            }
+            else
+            {
+                lbl.Text = "⚡";
+                _pnlIcon.FillColor = SmartTheme.Primary;
+                _pnlIcon.FillColor2 = SmartTheme.Purple;
+            }
         }
 
         [Category("Routine Data")]
@@ -71,8 +153,12 @@ namespace SmartRoutines.UI.Controls
             get => _isRunning;
             set
             {
-                _isRunning = value;
-                UpdateStateStyle();
+                if (_isRunning != value)
+                {
+                    _isRunning = value;
+                    UpdateStateStyle();
+                    StateChanged?.Invoke(this, EventArgs.Empty);
+                }
             }
         }
 
@@ -95,9 +181,11 @@ namespace SmartRoutines.UI.Controls
             
             lblSchedule.Font = SmartTheme.FontBody;
             lblSchedule.ForeColor = SmartTheme.TextSecondary;
+            lblSchedule.BackColor = Color.Transparent; // Draw cleanly over new dark region
 
             lblActions.Font = SmartTheme.FontBody;
             lblActions.ForeColor = SmartTheme.TextSecondary;
+            lblActions.BackColor = Color.Transparent; // Draw cleanly over new dark region
 
             lblLastRun.Font = SmartTheme.FontBody;
             lblLastRun.ForeColor = SmartTheme.Success; // Default
@@ -186,8 +274,12 @@ namespace SmartRoutines.UI.Controls
 
         private void toggleActive_CheckedChanged(object sender, EventArgs e)
         {
-            _isActive = toggleActive.Checked;
-            UpdateStateStyle();
+            if (_isActive != toggleActive.Checked)
+            {
+                _isActive = toggleActive.Checked;
+                UpdateStateStyle();
+                StateChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 }
