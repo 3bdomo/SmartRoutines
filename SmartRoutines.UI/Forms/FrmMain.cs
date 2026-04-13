@@ -1,7 +1,5 @@
-using System.Reflection;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
-using SmartRoutines.UI.Core.Tray;
 
 namespace SmartRoutines.UI.Forms
 {
@@ -12,10 +10,6 @@ namespace SmartRoutines.UI.Forms
         private const int SidebarExpandedWidth = 260;
         private const int SidebarCollapsedWidth = 76;
 
-        // --- System Tray ---
-        private TrayManager _trayManager = null!;
-        private bool _forceExit = false;
-
         public FrmMain()
         {
             InitializeComponent();
@@ -23,142 +17,50 @@ namespace SmartRoutines.UI.Forms
             // Override minimum bounds dynamically so the user can deeply test responsive web-like squishing
             this.MinimumSize = new Size(700, 500);
 
-            // CRITICAL: A physical 4px transparent safety buffer around the entire form edge.
-            // This prevents child panels from fully consuming the OS mouse hit-zone, ensuring
-            // WM_NCHITTEST messages still reach this Form for borderless resizing to work.
-            this.Padding = new Padding(4);
+            // EXTREMELY CRITICAL: Expose 2px of the absolute root Form edge. 
+            // If the child Panels sit perfectly on x=0 and y=0, they block Windows from sending 
+            // the WM_NCHITTEST (Mouse Resize) messages to the Form entirely.
+            this.Padding = new Padding(2);
 
             ApplyTheme();
-            InitializeTray();
-        }
-
-        // ─── System Tray Initialization ───────────────────────────────────
-        private void InitializeTray()
-        {
-            _trayManager = new TrayManager(this);
-
-            _trayManager.RestoreRequested += RestoreFromTray;
-
-            _trayManager.ExitRequested += () =>
-            {
-                _forceExit = true;
-                Application.Exit();
-            };
-
-            _trayManager.DisableAllRequested += () =>
-            {
-                // TODO: Wire to your engine pause logic
-                _trayManager.ShowBalloon("Smart Routines", "All routines have been disabled.", ToolTipIcon.Warning);
-            };
-
-            _trayManager.QuickRunRequested += (routineName) =>
-            {
-                // TODO: Wire to your RoutineRunner service
-                _trayManager.ShowBalloon("Quick Run", $"Running \"{routineName}\"...", ToolTipIcon.Info);
-            };
-        }
-
-        /// <summary>
-        /// Brings the application window back from the system tray.
-        /// </summary>
-        public void RestoreFromTray()
-        {
-            this.Show();
-            this.WindowState = FormWindowState.Normal;
-            this.BringToFront();
-            this.Activate();
-        }
-
-        /// <summary>
-        /// Hides the form to the system tray (minimize to tray).
-        /// </summary>
-        private void MinimizeToTray()
-        {
-            this.Hide();
-            _trayManager.ShowBalloon("Smart Routines", "Running in background. Click the tray icon to restore.", ToolTipIcon.Info);
-        }
-
-        // ─── Close-to-Background: Intercept the form closing event ────────
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            if (!_forceExit && e.CloseReason == CloseReason.UserClosing)
-            {
-                e.Cancel = true;
-                MinimizeToTray();
-                return;
-            }
-
-            // True exit — ensure TrayManager is deterministically disposed
-            _trayManager.Dispose();
-            base.OnFormClosing(e);
-        }
-
-        // --- WS_EX_COMPOSITED: Double-buffer the ENTIRE window tree (not just individual controls).
-        // This tells the Desktop Window Manager to compose child windows off-screen first,
-        // eliminating the intermediate intermediate paint flicker during sidebar width animation.
-        protected override CreateParams CreateParams
-        {
-            get
-            {
-                const int WS_EX_COMPOSITED = 0x02000000;
-                CreateParams cp = base.CreateParams;
-                cp.ExStyle |= WS_EX_COMPOSITED;
-                return cp;
-            }
         }
 
         // --- Low-Level OS Hit-Test Hook for Ultimate Borderless Resizability ---
-        // IMPORTANT: We evaluate the hit-zone BEFORE calling base.WndProc so our resize
-        // regions take unconditional precedence over any child control mouse events
-        // (pnlHeader and pnlSidebar would otherwise swallow the message entirely).
+        // This ensures the outer 6 pixels of the application always behave as a resizable frame,
+        // even if inner UI components are physically rendering over them!
         protected override void WndProc(ref Message m)
         {
             const int WM_NCHITTEST = 0x0084;
-            const int HTLEFT       = 10, HTRIGHT      = 11;
-            const int HTTOP       = 12, HTTOPLEFT    = 13, HTTOPRIGHT  = 14;
-            const int HTBOTTOM    = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+            const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
 
-            // 10-pixel hit-zone: wide enough for easy mouse grab even on 4K displays
-            // and takes priority over child controls that sit on the form edges.
-            if (m.Msg == WM_NCHITTEST)
+            base.WndProc(ref m);
+
+            if (m.Msg == WM_NCHITTEST && (int)m.Result == 1) // 1 = HTCLIENT
             {
-                // Decode the cursor position passed by Windows (screen coordinates)
-                int resizerSize = 10;
+                int resizerSize = 6;
                 Point screenPoint = new Point(m.LParam.ToInt32());
                 Point clientPoint = this.PointToClient(screenPoint);
 
-                bool onLeft   = clientPoint.X <= resizerSize;
-                bool onRight  = clientPoint.X >= this.ClientSize.Width  - resizerSize;
-                bool onTop    = clientPoint.Y <= resizerSize;
-                bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
-
-                // Corner detection must come first (order matters!)
-                if      (onTop    && onLeft)  { m.Result = (IntPtr)HTTOPLEFT;     return; }
-                else if (onTop    && onRight) { m.Result = (IntPtr)HTTOPRIGHT;    return; }
-                else if (onBottom && onLeft)  { m.Result = (IntPtr)HTBOTTOMLEFT;  return; }
-                else if (onBottom && onRight) { m.Result = (IntPtr)HTBOTTOMRIGHT; return; }
-                else if (onTop)               { m.Result = (IntPtr)HTTOP;         return; }
-                else if (onBottom)            { m.Result = (IntPtr)HTBOTTOM;      return; }
-                else if (onLeft)              { m.Result = (IntPtr)HTLEFT;        return; }
-                else if (onRight)             { m.Result = (IntPtr)HTRIGHT;       return; }
-                // Not on a resize edge — fall through to the standard hit-test pipeline
+                if (clientPoint.Y <= resizerSize)
+                {
+                    if (clientPoint.X <= resizerSize) m.Result = (IntPtr)HTTOPLEFT;
+                    else if (clientPoint.X >= this.ClientSize.Width - resizerSize) m.Result = (IntPtr)HTTOPRIGHT;
+                    else m.Result = (IntPtr)HTTOP;
+                }
+                else if (clientPoint.Y >= this.ClientSize.Height - resizerSize)
+                {
+                    if (clientPoint.X <= resizerSize) m.Result = (IntPtr)HTBOTTOMLEFT;
+                    else if (clientPoint.X >= this.ClientSize.Width - resizerSize) m.Result = (IntPtr)HTBOTTOMRIGHT;
+                    else m.Result = (IntPtr)HTBOTTOM;
+                }
+                else if (clientPoint.X <= resizerSize) m.Result = (IntPtr)HTLEFT;
+                else if (clientPoint.X >= this.ClientSize.Width - resizerSize) m.Result = (IntPtr)HTRIGHT;
             }
-
-            base.WndProc(ref m);
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-
-            // --- Minimize to Tray ---
-            // When the user hits the taskbar minimize button (or Win+D), we intercept
-            // the Minimized state and hide the form entirely, keeping it in the tray.
-            if (WindowState == FormWindowState.Minimized)
-            {
-                MinimizeToTray();
-                return;
-            }
 
             // Responsive auto-collapse based on pure window width
             if (this.Width < 1050 && !_sidebarCollapsed)
@@ -175,19 +77,21 @@ namespace SmartRoutines.UI.Forms
             }
         }
 
-        private UserControl? _currentPage;
-
         public void DisplayPage(UserControl page)
         {
-            if (_currentPage != null && pnlMainContent.Controls.Contains(_currentPage))
+            // Remove old pages (keep pnlContentHeader)
+            var toRemove = pnlMainContent.Controls
+                .OfType<UserControl>()
+                .ToList();
+            foreach (var old in toRemove)
             {
-                pnlMainContent.Controls.Remove(_currentPage);
-                _currentPage.Dispose();
+                pnlMainContent.Controls.Remove(old);
+                old.Dispose();
             }
-            _currentPage = page;
+
             page.Dock = DockStyle.Fill;
             pnlMainContent.Controls.Add(page);
-            page.SendToBack(); // Force page to let Headers safely push it down
+            page.BringToFront();
         }
 
         private void SetActiveNavButton(Guna2Button btn)
@@ -228,9 +132,10 @@ namespace SmartRoutines.UI.Forms
         private void btnNavSettings_Click(object sender, EventArgs e)
         {
             SetActiveNavButton(btnNavSettings);
+            DisplayPage(new Controls.UC_Settings());
         }
 
-        private void btnClose_Click(object sender, EventArgs e) => Close();
+        private void btnClose_Click(object sender, EventArgs e) => Application.Exit();
 
         private void btnMaximize_Click(object sender, EventArgs e)
         {
@@ -312,12 +217,6 @@ namespace SmartRoutines.UI.Forms
 
             pnlMainContent.FillColor = SmartTheme.Background;
 
-            // Force per-control double buffering for the two largest animated surfaces.
-            // WS_EX_COMPOSITED handles the window-tree level; this handles any residual
-            // per-pixel flicker that can appear on Guna2Panel repaints during resize.
-            EnableDoubleBuffering(pnlSidebar);
-            EnableDoubleBuffering(pnlMainContent);
-
             StyleWindowButton(btnClose, "✕", SmartTheme.Danger);
             StyleWindowButton(btnMaximize, "□", SmartTheme.TextSecondary);
             StyleWindowButton(btnMinimize, "─", SmartTheme.TextSecondary);
@@ -363,7 +262,7 @@ namespace SmartRoutines.UI.Forms
             btnCloseWin.FlatAppearance.MouseDownBackColor = Color.FromArgb(190, 15, 30);
             btnCloseWin.MouseEnter += (s, e) => btnCloseWin.ForeColor = Color.White;
             btnCloseWin.MouseLeave += (s, e) => btnCloseWin.ForeColor = SmartTheme.TextSecondary;
-            btnCloseWin.Click += (s, e) => Close();
+            btnCloseWin.Click += (s, e) => Application.Exit();
 
             var btnMaxWin = new Button
             {
@@ -478,7 +377,7 @@ namespace SmartRoutines.UI.Forms
 
             var btnCreateNew = new Guna.UI2.WinForms.Guna2GradientButton
             {
-                Text = "Add New Routine",
+                Text = "＋ Create New Routine",
                 Font = SmartTheme.FontSmallBold,
                 ForeColor = Color.White,
                 Size = new Size(170, 40),
@@ -488,7 +387,6 @@ namespace SmartRoutines.UI.Forms
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 0, 16, 0)
             };
-            btnCreateNew.Click += btnCreateNew_Click;
 
             var btnTheme = new Guna.UI2.WinForms.Guna2Button
             {
@@ -682,61 +580,34 @@ namespace SmartRoutines.UI.Forms
             int targetWidth = collapse ? SidebarCollapsedWidth : SidebarExpandedWidth;
             string chevron = collapse ? ">" : "<";
 
-            lblBrandName.Visible    = !collapse;
+            lblBrandName.Visible = !collapse;
             lblBrandSubtitle.Visible = !collapse;
-            lblEngineStatus.Visible  = !collapse;
+            lblEngineStatus.Visible = !collapse;
             lblEngineSubtitle.Visible = !collapse;
-
-            // --- Layout Suspension ---
-            // Freeze the layout engine on both the parent form and the sidebar BEFORE
-            // the animation loop begins. This batches all intermediate width changes
-            // into a single deferred layout pass, eliminating mid-animation flicker
-            // caused by child controls repositioning on every pixel increment.
-            this.SuspendLayout();
-            pnlSidebar.SuspendLayout();
 
             var timer = new System.Windows.Forms.Timer { Interval = 16 };
             timer.Tick += (s, e) =>
             {
                 int current = pnlSidebar.Width;
-                int diff    = targetWidth - current;
-                int step    = (int)(diff * 0.28);
+                int diff = targetWidth - current;
+                int step = (int)(diff * 0.28);
                 if (step == 0 && diff != 0) step = Math.Sign(diff);
                 int next = current + step;
 
                 if (Math.Abs(targetWidth - next) <= 1)
                 {
-                    // Animation complete — snap to exact target and release the layout freeze.
-                    // ResumeLayout(true) triggers the deferred layout pass, snapping all child
-                    // controls to their correct positions in one atomic repaint.
-                    pnlSidebar.Width        = targetWidth;
-                    btnSidebarCollapse.Text  = chevron;
-                    btnSidebarCollapse.Left  = targetWidth - 14;
-
-                    pnlSidebar.ResumeLayout(true);
-                    this.ResumeLayout(false);
-
+                    pnlSidebar.Width = targetWidth;
+                    btnSidebarCollapse.Text = chevron;
+                    btnSidebarCollapse.Left = targetWidth - 14;
                     timer.Stop();
                     timer.Dispose();
                     return;
                 }
 
-                pnlSidebar.Width       = next;
+                pnlSidebar.Width = next;
                 btnSidebarCollapse.Left = next - 14;
             };
             timer.Start();
-        }
-
-        // --- Double Buffer via Reflection ---
-        // The standard Control.DoubleBuffered property has a protected setter, so
-        // Guna2Panel and other third-party controls cannot be double-buffered from
-        // outside code without this reflection trick.
-        private static void EnableDoubleBuffering(Control control)
-        {
-            PropertyInfo? prop = typeof(Control).GetProperty(
-                "DoubleBuffered",
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            prop?.SetValue(control, true, null);
         }
 
         private void InitializeEngineHover()

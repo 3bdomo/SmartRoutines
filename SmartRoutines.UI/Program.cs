@@ -13,12 +13,13 @@ namespace SmartRoutines.UI
         {
             ApplicationConfiguration.Initialize();
 
-            //var dashboard = new UC_Dashboard();
-            //dashboard.Controls.Add(new UC_Dashboard());
+            var Settings = new UC_Settings();
+            Settings.Controls.Add(new UC_Settings());
 
-            //Application.Run(new Form { Controls = { dashboard } });
+            Application.Run(new Form { Controls = { Settings } });
 
-            Application.Run(new FrmMain());
+
+            //Application.Run(new FrmMain());
         }
     }
 }
