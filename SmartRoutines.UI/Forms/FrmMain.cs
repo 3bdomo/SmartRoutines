@@ -1,7 +1,7 @@
-using System.Reflection;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.UI.Core.Tray;
+using System.Reflection;
 
 namespace SmartRoutines.UI.Forms
 {
@@ -114,9 +114,9 @@ namespace SmartRoutines.UI.Forms
         protected override void WndProc(ref Message m)
         {
             const int WM_NCHITTEST = 0x0084;
-            const int HTLEFT       = 10, HTRIGHT      = 11;
-            const int HTTOP       = 12, HTTOPLEFT    = 13, HTTOPRIGHT  = 14;
-            const int HTBOTTOM    = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+            const int HTLEFT = 10, HTRIGHT = 11;
+            const int HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
+            const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
 
             // 10-pixel hit-zone: wide enough for easy mouse grab even on 4K displays
             // and takes priority over child controls that sit on the form edges.
@@ -127,20 +127,20 @@ namespace SmartRoutines.UI.Forms
                 Point screenPoint = new Point(m.LParam.ToInt32());
                 Point clientPoint = this.PointToClient(screenPoint);
 
-                bool onLeft   = clientPoint.X <= resizerSize;
-                bool onRight  = clientPoint.X >= this.ClientSize.Width  - resizerSize;
-                bool onTop    = clientPoint.Y <= resizerSize;
+                bool onLeft = clientPoint.X <= resizerSize;
+                bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
+                bool onTop = clientPoint.Y <= resizerSize;
                 bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
 
                 // Corner detection must come first (order matters!)
-                if      (onTop    && onLeft)  { m.Result = (IntPtr)HTTOPLEFT;     return; }
-                else if (onTop    && onRight) { m.Result = (IntPtr)HTTOPRIGHT;    return; }
-                else if (onBottom && onLeft)  { m.Result = (IntPtr)HTBOTTOMLEFT;  return; }
+                if (onTop && onLeft) { m.Result = (IntPtr)HTTOPLEFT; return; }
+                else if (onTop && onRight) { m.Result = (IntPtr)HTTOPRIGHT; return; }
+                else if (onBottom && onLeft) { m.Result = (IntPtr)HTBOTTOMLEFT; return; }
                 else if (onBottom && onRight) { m.Result = (IntPtr)HTBOTTOMRIGHT; return; }
-                else if (onTop)               { m.Result = (IntPtr)HTTOP;         return; }
-                else if (onBottom)            { m.Result = (IntPtr)HTBOTTOM;      return; }
-                else if (onLeft)              { m.Result = (IntPtr)HTLEFT;        return; }
-                else if (onRight)             { m.Result = (IntPtr)HTRIGHT;       return; }
+                else if (onTop) { m.Result = (IntPtr)HTTOP; return; }
+                else if (onBottom) { m.Result = (IntPtr)HTBOTTOM; return; }
+                else if (onLeft) { m.Result = (IntPtr)HTLEFT; return; }
+                else if (onRight) { m.Result = (IntPtr)HTRIGHT; return; }
                 // Not on a resize edge — fall through to the standard hit-test pipeline
             }
 
@@ -488,7 +488,7 @@ namespace SmartRoutines.UI.Forms
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 0, 16, 0)
             };
-            btnCreateNew.Click += btnCreateNew_Click;
+            //btnCreateNew.Click += btnCreateNew_Click;
 
             var btnTheme = new Guna.UI2.WinForms.Guna2Button
             {
@@ -682,9 +682,9 @@ namespace SmartRoutines.UI.Forms
             int targetWidth = collapse ? SidebarCollapsedWidth : SidebarExpandedWidth;
             string chevron = collapse ? ">" : "<";
 
-            lblBrandName.Visible    = !collapse;
+            lblBrandName.Visible = !collapse;
             lblBrandSubtitle.Visible = !collapse;
-            lblEngineStatus.Visible  = !collapse;
+            lblEngineStatus.Visible = !collapse;
             lblEngineSubtitle.Visible = !collapse;
 
             // --- Layout Suspension ---
@@ -699,8 +699,8 @@ namespace SmartRoutines.UI.Forms
             timer.Tick += (s, e) =>
             {
                 int current = pnlSidebar.Width;
-                int diff    = targetWidth - current;
-                int step    = (int)(diff * 0.28);
+                int diff = targetWidth - current;
+                int step = (int)(diff * 0.28);
                 if (step == 0 && diff != 0) step = Math.Sign(diff);
                 int next = current + step;
 
@@ -709,9 +709,9 @@ namespace SmartRoutines.UI.Forms
                     // Animation complete — snap to exact target and release the layout freeze.
                     // ResumeLayout(true) triggers the deferred layout pass, snapping all child
                     // controls to their correct positions in one atomic repaint.
-                    pnlSidebar.Width        = targetWidth;
-                    btnSidebarCollapse.Text  = chevron;
-                    btnSidebarCollapse.Left  = targetWidth - 14;
+                    pnlSidebar.Width = targetWidth;
+                    btnSidebarCollapse.Text = chevron;
+                    btnSidebarCollapse.Left = targetWidth - 14;
 
                     pnlSidebar.ResumeLayout(true);
                     this.ResumeLayout(false);
@@ -721,7 +721,7 @@ namespace SmartRoutines.UI.Forms
                     return;
                 }
 
-                pnlSidebar.Width       = next;
+                pnlSidebar.Width = next;
                 btnSidebarCollapse.Left = next - 14;
             };
             timer.Start();
