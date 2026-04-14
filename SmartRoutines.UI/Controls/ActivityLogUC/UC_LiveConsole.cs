@@ -1,5 +1,5 @@
 using SmartRoutines.UI.Core.Theme;
-using SmartRoutines.Core.Enums;
+using SmartRoutines.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SmartRoutines.Core.Domain.Enums;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -108,7 +109,7 @@ namespace SmartRoutines.UI.Controls
 
                 richConsole.SelectionColor = SmartTheme.Success;
                 richConsole.ScrollToCaret();
-            }));
+            };
         }
 
         // append a line exactly as provided (no timestamp) — used to mimic design's green lines and prompt style

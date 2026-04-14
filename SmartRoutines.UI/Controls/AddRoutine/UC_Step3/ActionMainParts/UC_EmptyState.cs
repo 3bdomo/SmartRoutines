@@ -1,7 +1,6 @@
-﻿using System;
-using SmartRoutines.UI.Core.Theme;
+﻿using SmartRoutines.UI.Core.Theme;
 
-namespace SmartRoutines.UI.Controls.Step3;
+namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 
 public partial class UC_EmptyState : SmartUserControl
 {

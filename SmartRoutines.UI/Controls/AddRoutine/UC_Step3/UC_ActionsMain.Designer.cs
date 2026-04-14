@@ -1,4 +1,5 @@
-﻿using SmartRoutines.UI.Core.Theme;
+﻿using SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
+using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -30,7 +31,7 @@ namespace SmartRoutines.UI.Controls
         /// </summary>
         private void InitializeComponent()
         {
-            pipelineActions = new SmartRoutines.UI.Controls.Step3.UC_Step3_Actions();
+            pipelineActions = new UC_Step3_Actions();
             SuspendLayout();
             // 
             // pipelineActions
@@ -55,6 +56,6 @@ namespace SmartRoutines.UI.Controls
 
         #endregion
 
-        private SmartRoutines.UI.Controls.Step3.UC_Step3_Actions pipelineActions;
+        private UC_Step3_Actions pipelineActions;
     }
 }

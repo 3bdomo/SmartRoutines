@@ -1,4 +1,4 @@
-﻿namespace SmartRoutines.UI.Controls.Step3;
+﻿namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 
 partial class UC_Step3_Actions
 {
@@ -45,7 +45,7 @@ partial class UC_Step3_Actions
         _flowTemplateItems = new System.Windows.Forms.FlowLayoutPanel();
         _txtSearchAction = new Guna.UI2.WinForms.Guna2TextBox();
         _flowActions = new System.Windows.Forms.FlowLayoutPanel();
-        _emptyState = new SmartRoutines.UI.Controls.Step3.UC_EmptyState();
+        _emptyState = new UC_EmptyState();
         _footer = new System.Windows.Forms.Panel();
         _btnAddAction = new Guna.UI2.WinForms.Guna2Button();
         _root.SuspendLayout();

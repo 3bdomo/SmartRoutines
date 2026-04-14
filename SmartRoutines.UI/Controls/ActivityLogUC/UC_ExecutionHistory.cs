@@ -1,3 +1,4 @@
+using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls

@@ -1,6 +1,6 @@
-using SmartRoutines.Core.Enums;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Interfaces.Data;
-using SmartRoutines.Core.Models;
+using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls
