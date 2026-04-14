@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Project_2.Forms;
 using SmartRoutines.Data;
 using SmartRoutines.UI.Forms;
 
@@ -17,6 +18,7 @@ namespace SmartRoutines.UI
                 .ConfigureServices((context, services) =>
                 {
                     // Register services and dependencies here
+                    services.AddLogicServices();
                     services.AddDataServices();
                     services.AddTransient<FrmMain>();
                 })
@@ -24,13 +26,7 @@ namespace SmartRoutines.UI
 
             ApplicationConfiguration.Initialize();
 
-            // var Settings = new UC_Settings();
-            // Settings.Controls.Add(new UC_Settings());
 
-            // Application.Run(new Form { Controls = { Settings } });
-
-            var mainForm = host.Services.GetRequiredService<FrmMain>();
-            Application.Run(mainForm);
 
         }
     }
