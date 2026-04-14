@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using SmartRoutines.Core.Domain.Entities;
+﻿using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.Exceptions;
 using SmartRoutines.Core.Interfaces.Logic;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace SmartRoutines.Logic.ActionExecutors;
 
@@ -72,7 +72,7 @@ public class LaunchAppExecutor : IAction
         {
             throw new ArgumentNullException(nameof(entry));
         }
-    
+
         if (entry.Type != ActionType.LaunchApp)
         {
             throw new ArgumentException("Action entry type must be LaunchApp.", nameof(entry));
@@ -122,7 +122,7 @@ public class LaunchAppExecutor : IAction
 /// <summary>
 /// Backward-compatible alias for older registrations that still reference OpenApplicationAction.
 /// </summary>
-public sealed class OpenApplicationAction : LaunchAppExecutor
+public sealed class OpenApplicationExecutor : LaunchAppExecutor
 {
 }
 
