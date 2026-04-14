@@ -17,6 +17,11 @@ namespace SmartRoutines.UI.Controls
         private Guna2GradientPanel _pnlIcon = null!;
         private Guna2Panel _pnlScheduleRegion = null!;
 
+        // Font cache — prevents GDI+ handle leaks from creating new Font objects on every resize tick
+        private float _cachedScaleFactor = -1f;
+        private Font? _cachedFontSubheader;
+        private Font? _cachedFontBody;
+
         public UC_RoutineCard()
         {
             InitializeComponent();
@@ -27,7 +32,7 @@ namespace SmartRoutines.UI.Controls
                           ControlStyles.OptimizedDoubleBuffer, true);
             this.DoubleBuffered = true;
 
-            this.MinimumSize = new Size(280, 260);
+            this.MinimumSize = new Size(260, 200);
             this.BackColor = Color.Transparent;
 
             BuildGradientIcon();
@@ -47,6 +52,9 @@ namespace SmartRoutines.UI.Controls
                 FillColor2 = Color.FromArgb(56, 189, 248),
                 GradientMode = System.Drawing.Drawing2D.LinearGradientMode.ForwardDiagonal
             };
+
+            // Maintain icon position during container resizes
+            _pnlIcon.Anchor = AnchorStyles.Top | AnchorStyles.Left;
 
             var iconPic = new PictureBox
             {
@@ -225,10 +233,13 @@ namespace SmartRoutines.UI.Controls
 
             lblName.Font = SmartTheme.FontSubheader;
             lblName.ForeColor = SmartTheme.TextPrimary;
+            // Anchor name so it remains aligned when parent resizes
+            lblName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblName.Location = new Point(_pnlIcon.Right + 12, _pnlIcon.Top + 14); // Better vertical alignment
 
             lblDescription.Font = SmartTheme.FontBody;
             lblDescription.ForeColor = SmartTheme.TextSecondary;
+            lblDescription.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblDescription.Location = new Point(20, _pnlIcon.Bottom + 12);
 
             lblSchedule.Font = SmartTheme.FontBody;
@@ -351,26 +362,44 @@ namespace SmartRoutines.UI.Controls
 
         public void ScaleUI(float factor)
         {
-            this.SuspendLayout();
-            
-            // Scaled Fonts
-            lblName.Font = new Font(SmartTheme.FontSubheader.FontFamily, SmartTheme.FontSubheader.Size * factor, SmartTheme.FontSubheader.Style);
-            lblDescription.Font = new Font(SmartTheme.FontBody.FontFamily, SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
-            lblSchedule.Font = new Font(SmartTheme.FontBody.FontFamily, SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
-            lblActions.Font = new Font(SmartTheme.FontBody.FontFamily, SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
-            lblLastRun.Font = new Font(SmartTheme.FontBody.FontFamily, SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
-            btnRunNow.Font = new Font(SmartTheme.FontBody.FontFamily, SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
+            // Only rebuild fonts when the factor actually changes — prevents GDI+ handle leaks
+            if (Math.Abs(factor - _cachedScaleFactor) < 0.01f) return;
+            _cachedScaleFactor = factor;
 
-            // Scaled Icons
+            _cachedFontSubheader?.Dispose();
+            _cachedFontBody?.Dispose();
+            _cachedFontSubheader = new Font(SmartTheme.FontSubheader.FontFamily,
+                SmartTheme.FontSubheader.Size * factor, SmartTheme.FontSubheader.Style);
+            _cachedFontBody = new Font(SmartTheme.FontBody.FontFamily,
+                SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
+
+            this.SuspendLayout();
+
+            lblName.Font        = _cachedFontSubheader;
+            lblDescription.Font = _cachedFontBody;
+            lblSchedule.Font    = _cachedFontBody;
+            lblActions.Font     = _cachedFontBody;
+            lblLastRun.Font     = _cachedFontBody;
+            btnRunNow.Font      = _cachedFontBody;
+
             if (_pnlIcon != null)
             {
-                int iconSize = (int)(52 * factor);
+                int iconSize = (int)(46 * factor);
                 _pnlIcon.Size = new Size(iconSize, iconSize);
                 _pnlIcon.BorderRadius = (int)(14 * factor);
             }
             btnRunNow.BorderRadius = (int)(20 * factor);
 
             this.ResumeLayout(false);
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            _cachedFontSubheader?.Dispose();
+            _cachedFontSubheader = null;
+            _cachedFontBody?.Dispose();
+            _cachedFontBody = null;
+            base.OnHandleDestroyed(e);
         }
     }
 }

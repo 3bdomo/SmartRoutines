@@ -81,8 +81,10 @@ namespace SmartRoutines.UI.Controls
             {
                 _cardColor = value;
                 pnlCard.FillColor = value;
-                lblTitle.BackColor = value;
-                lblValue.BackColor = value;
+                // Labels must stay Transparent — setting them to the card color
+                // creates visible rectangles on Guna2Panel's rounded corners.
+                lblTitle.BackColor = Color.Transparent;
+                lblValue.BackColor = Color.Transparent;
             }
         }
 

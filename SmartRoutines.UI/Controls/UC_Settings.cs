@@ -1,4 +1,4 @@
-﻿using Guna.UI2.WinForms;
+using Guna.UI2.WinForms;
 using Microsoft.Win32;
 using SmartRoutines.UI.Core.Theme;
 using System.Drawing.Drawing2D;
@@ -548,14 +548,23 @@ namespace SmartRoutines.UI.Controls
 
     public class RoundedPanel : Panel
     {
+        public RoundedPanel()
+        {
+            this.DoubleBuffered = true;
+            this.ResizeRedraw = true;
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             using var path = GetPath(ClientRectangle, 18);
-            Region = new Region(path);
+            // Dispose old Region before assigning — prevents GDI handle leak on every repaint
+            this.Region?.Dispose();
+            this.Region = new Region(path);
             using var brush = new SolidBrush(BackColor);
             e.Graphics.FillPath(brush, path);
         }
+
         private static GraphicsPath GetPath(Rectangle r, int rad)
         {
             var p = new GraphicsPath();

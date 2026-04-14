@@ -52,13 +52,13 @@ namespace SmartRoutines.UI.Controls
             this.pnlBase.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlBase.Location = new System.Drawing.Point(0, 0);
             this.pnlBase.Name = "pnlBase";
-            this.pnlBase.Size = new System.Drawing.Size(340, 275);
+            this.pnlBase.Size = new System.Drawing.Size(300, 210);
             this.pnlBase.TabIndex = 0;
             // 
             // pbIcon
             // 
             this.pbIcon.BackColor = System.Drawing.Color.MediumSlateBlue;
-            this.pbIcon.Location = new System.Drawing.Point(24, 24);
+            this.pbIcon.Location = new System.Drawing.Point(20, 20);
             this.pbIcon.Name = "pbIcon";
             this.pbIcon.Size = new System.Drawing.Size(42, 42);
             this.pbIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
@@ -68,16 +68,16 @@ namespace SmartRoutines.UI.Controls
             // lblName
             // 
             this.lblName.AutoEllipsis = true;
-            this.lblName.Location = new System.Drawing.Point(82, 24);
+            this.lblName.Location = new System.Drawing.Point(74, 20);
             this.lblName.Name = "lblName";
-            this.lblName.Size = new System.Drawing.Size(160, 22);
+            this.lblName.Size = new System.Drawing.Size(140, 22);
             this.lblName.TabIndex = 1;
             this.lblName.Text = "Routine Name";
             // 
             // btnEdit
             // 
             this.btnEdit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnEdit.Location = new System.Drawing.Point(250, 20);
+            this.btnEdit.Location = new System.Drawing.Point(218, 16);
             this.btnEdit.Name = "btnEdit";
             this.btnEdit.Size = new System.Drawing.Size(32, 32);
             this.btnEdit.TabIndex = 2;
@@ -88,7 +88,7 @@ namespace SmartRoutines.UI.Controls
             // btnDelete
             // 
             this.btnDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnDelete.Location = new System.Drawing.Point(286, 20);
+            this.btnDelete.Location = new System.Drawing.Point(254, 16);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(32, 32);
             this.btnDelete.TabIndex = 3;
@@ -100,9 +100,9 @@ namespace SmartRoutines.UI.Controls
             // 
             this.lblDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.lblDescription.AutoEllipsis = true;
-            this.lblDescription.Location = new System.Drawing.Point(82, 48);
+            this.lblDescription.Location = new System.Drawing.Point(74, 44);
             this.lblDescription.Name = "lblDescription";
-            this.lblDescription.Size = new System.Drawing.Size(234, 38);
+            this.lblDescription.Size = new System.Drawing.Size(212, 36);
             this.lblDescription.TabIndex = 4;
             this.lblDescription.Text = "Description details here spanning maximum of two lines.";
             // 
@@ -110,17 +110,17 @@ namespace SmartRoutines.UI.Controls
             // 
             this.pnlDivider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlDivider.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
-            this.pnlDivider.Location = new System.Drawing.Point(24, 96);
+            this.pnlDivider.Location = new System.Drawing.Point(18, 88);
             this.pnlDivider.Name = "pnlDivider";
-            this.pnlDivider.Size = new System.Drawing.Size(292, 60);
+            this.pnlDivider.Size = new System.Drawing.Size(264, 50);
             this.pnlDivider.TabIndex = 10;
             // 
             // lblSchedule
             // 
             this.lblSchedule.AutoEllipsis = true;
-            this.lblSchedule.Location = new System.Drawing.Point(34, 104);
+            this.lblSchedule.Location = new System.Drawing.Point(28, 96);
             this.lblSchedule.Name = "lblSchedule";
-            this.lblSchedule.Size = new System.Drawing.Size(272, 20);
+            this.lblSchedule.Size = new System.Drawing.Size(248, 18);
             this.lblSchedule.TabIndex = 5;
             this.lblSchedule.Text = "⏱️ Every Mon, Tue... at 08:00";
             this.lblSchedule.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
@@ -128,9 +128,9 @@ namespace SmartRoutines.UI.Controls
             // lblActions
             // 
             this.lblActions.AutoEllipsis = true;
-            this.lblActions.Location = new System.Drawing.Point(34, 126);
+            this.lblActions.Location = new System.Drawing.Point(28, 116);
             this.lblActions.Name = "lblActions";
-            this.lblActions.Size = new System.Drawing.Size(272, 20);
+            this.lblActions.Size = new System.Drawing.Size(248, 18);
             this.lblActions.TabIndex = 6;
             this.lblActions.Text = "2 actions configured";
             this.lblActions.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
@@ -138,9 +138,9 @@ namespace SmartRoutines.UI.Controls
             // lblLastRun
             // 
             this.lblLastRun.AutoEllipsis = true;
-            this.lblLastRun.Location = new System.Drawing.Point(24, 172);
+            this.lblLastRun.Location = new System.Drawing.Point(18, 148);
             this.lblLastRun.Name = "lblLastRun";
-            this.lblLastRun.Size = new System.Drawing.Size(292, 20);
+            this.lblLastRun.Size = new System.Drawing.Size(264, 18);
             this.lblLastRun.TabIndex = 6;
             this.lblLastRun.Text = "✔️ Last run: 8:06:24 PM";
             // 
@@ -152,7 +152,7 @@ namespace SmartRoutines.UI.Controls
             this.toggleActive.CheckedState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(120)))), ((int)(((byte)(212)))));
             this.toggleActive.CheckedState.InnerBorderColor = System.Drawing.Color.White;
             this.toggleActive.CheckedState.InnerColor = System.Drawing.Color.White;
-            this.toggleActive.Location = new System.Drawing.Point(24, 218);
+            this.toggleActive.Location = new System.Drawing.Point(18, 172);
             this.toggleActive.Name = "toggleActive";
             this.toggleActive.Size = new System.Drawing.Size(40, 22);
             this.toggleActive.TabIndex = 7;
@@ -166,7 +166,7 @@ namespace SmartRoutines.UI.Controls
             // 
             this.lblActive.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblActive.AutoSize = true;
-            this.lblActive.Location = new System.Drawing.Point(74, 221);
+            this.lblActive.Location = new System.Drawing.Point(66, 175);
             this.lblActive.Name = "lblActive";
             this.lblActive.Size = new System.Drawing.Size(40, 15);
             this.lblActive.TabIndex = 8;
@@ -175,21 +175,21 @@ namespace SmartRoutines.UI.Controls
             // btnRunNow
             // 
             this.btnRunNow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnRunNow.Location = new System.Drawing.Point(196, 212);
+            this.btnRunNow.Location = new System.Drawing.Point(170, 168);
             this.btnRunNow.Name = "btnRunNow";
-            this.btnRunNow.Size = new System.Drawing.Size(120, 36);
+            this.btnRunNow.Size = new System.Drawing.Size(112, 34);
             this.btnRunNow.TabIndex = 9;
             this.btnRunNow.Text = "▶ Run Now";
-            this.btnRunNow.BorderRadius = 4;
+            this.btnRunNow.BorderRadius = 20;
             // 
             // UC_RoutineCard
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.pnlBase);
-            this.Margin = new System.Windows.Forms.Padding(0, 0, 24, 24);
+            this.Margin = new System.Windows.Forms.Padding(0, 0, 10, 10);
             this.Name = "UC_RoutineCard";
-            this.Size = new System.Drawing.Size(340, 275);
+            this.Size = new System.Drawing.Size(300, 210);
             this.pnlBase.ResumeLayout(false);
             this.pnlBase.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbIcon)).EndInit();

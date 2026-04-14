@@ -10,9 +10,16 @@ namespace SmartRoutines.UI.Controls
         private UC_ExecutionHistory _ucHistory;
         public UC_LogsPage()
         {
+            this.SetStyle(
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.UserPaint |
+                ControlStyles.OptimizedDoubleBuffer, true);
+            this.DoubleBuffered = true;
+
+            this.SuspendLayout();
             InitializeComponent();
 
-            // Hide designer placeholders to rebuild cleanly
+            // Hide designer placeholders before BuildLayout replaces them
             pnlHeader.Visible = false;
             pnlDivider.Visible = false;
             pnlLogsArea.Visible = false;
@@ -23,7 +30,9 @@ namespace SmartRoutines.UI.Controls
             this.Padding = new Padding(26);
 
             BuildLayout();
+            this.ResumeLayout(true);
         }
+
 
         private void BuildLayout()
         {

@@ -19,6 +19,13 @@ namespace SmartRoutines.UI.Forms
         // --- Timers stored as fields so they can be disposed ---
         private System.Windows.Forms.Timer _blinkTimer = null!;
         private System.Windows.Forms.Timer _hoverTimer = null!;
+        // Debounces window resize events so ScaleUI / AdjustCardWidths aren't called every pixel
+        private System.Windows.Forms.Timer _resizeDebounce = null!;
+        // Guards against concurrent sidebar animation timers
+        private bool _sidebarAnimating = false;
+
+        // Cached nav font - prevents allocating new Font() on every nav click
+        private Font _navFont = null!;
 
         private Label _lblContentTitle = null!;
         private Label _lblContentSubtitle = null!;
@@ -42,8 +49,35 @@ namespace SmartRoutines.UI.Forms
             // 4px transparent safety buffer for borderless resizing
             this.Padding = new Padding(4);
 
+            // Debounce resize so layout code doesn't run on every drag pixel
+            _resizeDebounce = new System.Windows.Forms.Timer { Interval = 150 };
+            _resizeDebounce.Tick += (s, e) =>
+            {
+                _resizeDebounce.Stop();
+                // Sidebar breakpoint
+                if (this.Width < 1050 && !_sidebarCollapsed)
+                {
+                    _sidebarCollapsed = true;
+                    AnimateSidebar(_sidebarCollapsed);
+                }
+                else if (this.Width >= 1050 && _sidebarCollapsed)
+                {
+                    _sidebarCollapsed = false;
+                    AnimateSidebar(_sidebarCollapsed);
+                }
+                // Propagate to dashboard if visible
+                if (_currentPage is Controls.UC_Dashboard db) db.AdjustCardWidths();
+            };
+
             ApplyTheme();
             InitializeTray();
+
+            // Pre-warm all pages in the background so the first nav click is instant.
+            // WarmUpPagesAsync runs after the handle is created and the window is visible.
+            this.HandleCreated += async (s, ev) =>
+            {
+                await WarmUpPagesAsync();
+            };
         }
 
         // ─── System Tray ──────────────────────────────────────────────────
@@ -98,6 +132,9 @@ namespace SmartRoutines.UI.Forms
             _blinkTimer?.Dispose();
             _hoverTimer?.Stop();
             _hoverTimer?.Dispose();
+            _resizeDebounce?.Stop();
+            _resizeDebounce?.Dispose();
+            _navFont?.Dispose();
             _trayManager.Dispose();
 
             base.OnFormClosing(e);
@@ -139,28 +176,59 @@ namespace SmartRoutines.UI.Forms
 
         protected override void OnResize(EventArgs e)
         {
-            this.SuspendLayout();
             base.OnResize(e);
 
             if (WindowState == FormWindowState.Minimized)
             {
                 MinimizeToTray();
-                this.ResumeLayout(false);
                 return;
             }
 
-            // Responsive sidebar collapse at 1050px
-            if (this.Width < 1050 && !_sidebarCollapsed)
+            // Kick off debounce — actual layout work happens 150ms after the last resize event
+            _resizeDebounce?.Stop();
+            _resizeDebounce?.Start();
+        }
+
+        // ─── Background page warm-up ───────────────────────────────────────
+        // Creates each page on the UI thread (WinForms requires it) but defers
+        // the work to after the window has painted its first frame.
+        private async System.Threading.Tasks.Task WarmUpPagesAsync()
+        {
+            // Yield so the first frame renders fully before we start constructing pages.
+            await System.Threading.Tasks.Task.Delay(300);
+
+            if (this.IsDisposed) return;
+
+            // Warm up LogsPage
+            if (!_pageCache.ContainsKey(typeof(Controls.UC_LogsPage)))
             {
-                _sidebarCollapsed = true;
-                AnimateSidebar(_sidebarCollapsed);
+                this.Invoke(new Action(() =>
+                {
+                    if (this.IsDisposed) return;
+                    var page = new Controls.UC_LogsPage();
+                    page.Dock = DockStyle.Fill;
+                    page.Visible = false;
+                    pnlMainContent.Controls.Add(page);
+                    _pageCache[typeof(Controls.UC_LogsPage)] = page;
+                }));
             }
-            else if (this.Width >= 1050 && _sidebarCollapsed)
+
+            await System.Threading.Tasks.Task.Delay(100);
+            if (this.IsDisposed) return;
+
+            // Warm up Settings
+            if (!_pageCache.ContainsKey(typeof(Controls.UC_Settings)))
             {
-                _sidebarCollapsed = false;
-                AnimateSidebar(_sidebarCollapsed);
+                this.Invoke(new Action(() =>
+                {
+                    if (this.IsDisposed) return;
+                    var page = new Controls.UC_Settings();
+                    page.Dock = DockStyle.Fill;
+                    page.Visible = false;
+                    pnlMainContent.Controls.Add(page);
+                    _pageCache[typeof(Controls.UC_Settings)] = page;
+                }));
             }
-            this.ResumeLayout(true);
         }
 
         // ─── Page Navigation ───────────────────────────────────────────────
@@ -198,13 +266,16 @@ namespace SmartRoutines.UI.Forms
 
         private void SetActiveNavButton(Guna2Button btn)
         {
+            // Lazily create the font once instead of on every nav click
+            _navFont ??= new Font("Segoe UI", 11f, FontStyle.Regular);
+
             if (_activeNavButton != null)
             {
                 _activeNavButton.FillColor = Color.Transparent;
                 _activeNavButton.ForeColor = SmartTheme.TextSecondary;
                 _activeNavButton.CustomBorderThickness = new Padding(0);
                 _activeNavButton.BorderThickness = 0;
-                _activeNavButton.Font = new Font("Segoe UI", 11f, FontStyle.Regular);
+                _activeNavButton.Font = _navFont;
                 if (_activeNavButton.Tag is string oldIconName)
                     _activeNavButton.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon(oldIconName, 22);
             }
@@ -216,7 +287,7 @@ namespace SmartRoutines.UI.Forms
             _activeNavButton.BorderColor = Color.Transparent;
             _activeNavButton.BorderThickness = 0;
             _activeNavButton.CustomBorderThickness = new Padding(3, 0, 0, 0);
-            _activeNavButton.Font = new Font("Segoe UI", 11f, FontStyle.Regular);
+            _activeNavButton.Font = _navFont;
 
             if (_activeNavButton.Tag is string newIconName)
                 _activeNavButton.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon(newIconName, 22);
@@ -628,6 +699,10 @@ namespace SmartRoutines.UI.Forms
 
         private void AnimateSidebar(bool collapse)
         {
+            // Guard: prevent stacking multiple concurrent animation timers
+            if (_sidebarAnimating) return;
+            _sidebarAnimating = true;
+
             int targetWidth = collapse ? SidebarCollapsedWidth : SidebarExpandedWidth;
             string chevron = collapse ? ">" : "<";
 
@@ -636,20 +711,20 @@ namespace SmartRoutines.UI.Forms
             lblEngineStatus.Visible = !collapse;
             lblEngineSubtitle.Visible = !collapse;
 
-            this.SuspendLayout();
-            pnlSidebar.SuspendLayout();
-
             var timer = new System.Windows.Forms.Timer { Interval = 16 };
             timer.Tick += (s, e) =>
             {
                 int current = pnlSidebar.Width;
-                int diff = targetWidth - current;
-                int step = (int)(diff * 0.28);
+                int diff    = targetWidth - current;
+                int step    = (int)(diff * 0.28);
                 if (step == 0 && diff != 0) step = Math.Sign(diff);
-                int next = current + step;
+                int next    = current + step;
 
                 if (Math.Abs(targetWidth - next) <= 1)
                 {
+                    this.SuspendLayout();
+                    pnlSidebar.SuspendLayout();
+
                     pnlSidebar.Width = targetWidth;
                     btnSidebarCollapse.Text = chevron;
                     btnSidebarCollapse.Left = targetWidth - 14;
@@ -659,6 +734,7 @@ namespace SmartRoutines.UI.Forms
 
                     timer.Stop();
                     timer.Dispose();
+                    _sidebarAnimating = false;
                     return;
                 }
 
@@ -686,7 +762,8 @@ namespace SmartRoutines.UI.Forms
             lblEngineStatus.Cursor = Cursors.Hand;
             lblEngineSubtitle.Cursor = Cursors.Hand;
 
-            // FIX: stored as field so it can be disposed on form close
+            // Timer only runs during hover animation, NOT continuously at startup.
+            // This saves ~60 unnecessary UI-thread wakeups per second.
             _hoverTimer = new System.Windows.Forms.Timer { Interval = 16 };
             _hoverTimer.Tick += (s, e) =>
             {
@@ -707,8 +784,16 @@ namespace SmartRoutines.UI.Forms
 
                 int shift = currentAnimState / 33;
                 pnlEngineStatusBase.Padding = new Padding(shift);
+
+                // Auto-stop when fully settled in un-hovered state — no more CPU burn
+                if (!isHovering && currentAnimState == 0)
+                    _hoverTimer.Stop();
             };
-            _hoverTimer.Start();
+
+            // Start the timer only when the user actually hovers over the engine panel
+            pnlEngineStatusBase.MouseEnter += (s, e) => _hoverTimer.Start();
+            lblEngineStatus.MouseEnter     += (s, e) => _hoverTimer.Start();
+            lblEngineSubtitle.MouseEnter   += (s, e) => _hoverTimer.Start();
         }
 
         protected override CreateParams CreateParams

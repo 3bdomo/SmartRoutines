@@ -2,19 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+	  <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.5" />
+  </ItemGroup>
 
   <ItemGroup>
 	<ProjectReference Include="..\SmartRoutines.Core\SmartRoutines.Core.csproj" />
 	<ProjectReference Include="..\SmartRoutines.Data\SmartRoutines.Data.csproj">
 	 <PrivateAssets>all</PrivateAssets>
 	</ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="TriggerMonitors\" />
   </ItemGroup>
 
 </Project>
