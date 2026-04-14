@@ -1,43 +1,28 @@
 ﻿using SmartRoutines.Core.Domain.Entities;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace SmartRoutines.Core.Interfaces.Data;
-
-/// <summary>
-/// Defines the contract for an asynchronous data repository managing Routine persistence.
-/// </summary>
-public interface IRoutineRepository
+namespace SmartRoutines.Core.Interfaces.Data
 {
     /// <summary>
-    /// Retrieves all routines asynchronously.
+    /// Repository for <see cref="Routine"/> entities with domain-specific operations.
+    /// Inherits generic CRUD from <see cref="IGenericRepository{T}"/>.
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of all routines.</returns>
-    Task<List<Routine>> GetAllAsync();
+    public interface IRoutineRepository : IGenericRepository<Routine>
+    {
+        /// <summary>
+        /// Retrieve a routine and include related actions.
+        /// </summary>
+        Task<Routine?> GetByIdWithActionsAsync(Guid id);
 
-    /// <summary>
-    /// Retrieves a specific routine by its unique identifier asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the routine to retrieve.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the routine if found; otherwise, null.</returns>
-    Task<Routine?> GetByIdAsync(Guid id);
+        /// <summary>
+        /// Returns active, not-deleted routines with their actions eagerly loaded.
+        /// </summary>
+        Task<IEnumerable<Routine>> GetActiveNotDeletedWithActionsAsync();
 
-    /// <summary>
-    /// Adds a new routine to the repository asynchronously.
-    /// </summary>
-    /// <param name="routine">The routine to add.</param>
-    /// <returns>A task that represents the asynchronous add operation.</returns>
-    Task AddAsync(Routine routine);
-
-    /// <summary>
-    /// Updates an existing routine in the repository asynchronously.
-    /// </summary>
-    /// <param name="routine">The routine to update.</param>
-    /// <returns>A task that represents the asynchronous update operation.</returns>
-    Task UpdateAsync(Routine routine);
-
-    /// <summary>
-    /// Deletes a routine from the repository by its unique identifier asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the routine to delete.</param>
-    /// <returns>A task that represents the asynchronous delete operation.</returns>
-    Task DeleteAsync(Guid id);
+        /// <summary>
+        /// Checks whether a routine name is unique within the store.
+        /// </summary>
+        Task<bool> IsNameUniqueAsync(string name, Guid? excludeId = null);
+    }
 }

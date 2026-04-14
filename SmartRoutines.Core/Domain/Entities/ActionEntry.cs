@@ -1,4 +1,5 @@
 ﻿using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Exceptions;
 
 namespace SmartRoutines.Core.Domain.Entities
 {
@@ -71,10 +72,10 @@ namespace SmartRoutines.Core.Domain.Entities
         public ActionEntry(Guid routineId, ActionType type, string arguments, int executionOrder)
         {
             if (arguments == null)
-                throw new ArgumentNullException(nameof(arguments), "Action arguments cannot be null. Use an empty string if no arguments are required.");
+                throw new BusinessRuleException("Action arguments cannot be null. Use an empty string if no arguments are required.");
 
             if (executionOrder < 1)
-                throw new ArgumentOutOfRangeException(nameof(executionOrder), "Execution order must be 1 or greater.");
+                throw new BusinessRuleException("Execution order must be 1 or greater.");
 
             RoutineId = routineId;
             Type = type;

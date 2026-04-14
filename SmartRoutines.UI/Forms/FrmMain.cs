@@ -1,7 +1,7 @@
-using System.Reflection;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.UI.Core.Tray;
+using System.Reflection;
 
 namespace SmartRoutines.UI.Forms
 {
@@ -112,6 +112,9 @@ namespace SmartRoutines.UI.Forms
             const int HTLEFT = 10, HTRIGHT = 11;
             const int HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
             const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+            const int HTLEFT = 10, HTRIGHT = 11;
+            const int HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
+            const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
 
             if (m.Msg == WM_NCHITTEST)
             {
@@ -119,6 +122,9 @@ namespace SmartRoutines.UI.Forms
                 Point screenPoint = new Point(m.LParam.ToInt32());
                 Point clientPoint = this.PointToClient(screenPoint);
 
+                bool onLeft = clientPoint.X <= resizerSize;
+                bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
+                bool onTop = clientPoint.Y <= resizerSize;
                 bool onLeft = clientPoint.X <= resizerSize;
                 bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
                 bool onTop = clientPoint.Y <= resizerSize;
@@ -264,7 +270,7 @@ namespace SmartRoutines.UI.Forms
             DisplayPage<Controls.UC_Settings>();
         }
 
-        private void btnClose_Click(object sender, EventArgs e) => Close();
+        private void btnClose_Click(object sender, EventArgs e) => Application.Exit();
 
         private void btnMaximize_Click(object sender, EventArgs e)
         {
