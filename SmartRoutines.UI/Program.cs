@@ -12,12 +12,6 @@ namespace SmartRoutines.UI
         static void Main()
         {
             ApplicationConfiguration.Initialize();
-
-            //var dashboard = new UC_Dashboard();
-            //dashboard.Controls.Add(new UC_Dashboard());
-
-            //Application.Run(new Form { Controls = { dashboard } });
-
             Application.Run(new FrmMain());
         }
     }

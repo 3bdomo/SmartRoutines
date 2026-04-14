@@ -17,7 +17,7 @@ namespace SmartRoutines.UI.Controls
 
         private void InitializeComponent()
         {
-            this.pnlBase = new Guna.UI2.WinForms.Guna2ShadowPanel();
+            this.pnlBase = new Guna.UI2.WinForms.Guna2Panel();
             this.pbIcon = new System.Windows.Forms.PictureBox();
             this.lblName = new System.Windows.Forms.Label();
             this.btnEdit = new Guna.UI2.WinForms.Guna2Button();
@@ -199,7 +199,7 @@ namespace SmartRoutines.UI.Controls
 
         #endregion
 
-        private Guna.UI2.WinForms.Guna2ShadowPanel pnlBase;
+        private Guna.UI2.WinForms.Guna2Panel pnlBase;
         private System.Windows.Forms.PictureBox pbIcon;
         private System.Windows.Forms.Label lblName;
         private Guna.UI2.WinForms.Guna2Button btnEdit;
