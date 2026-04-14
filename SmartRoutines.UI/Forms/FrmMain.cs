@@ -112,9 +112,6 @@ namespace SmartRoutines.UI.Forms
             const int HTLEFT = 10, HTRIGHT = 11;
             const int HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
             const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
-            const int HTLEFT = 10, HTRIGHT = 11;
-            const int HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
-            const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
 
             if (m.Msg == WM_NCHITTEST)
             {
@@ -125,10 +122,7 @@ namespace SmartRoutines.UI.Forms
                 bool onLeft = clientPoint.X <= resizerSize;
                 bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
                 bool onTop = clientPoint.Y <= resizerSize;
-                bool onLeft = clientPoint.X <= resizerSize;
-                bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
-                bool onTop = clientPoint.Y <= resizerSize;
-                bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
+               bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
 
                 if (onTop && onLeft) { m.Result = (IntPtr)HTTOPLEFT; return; }
                 else if (onTop && onRight) { m.Result = (IntPtr)HTTOPRIGHT; return; }

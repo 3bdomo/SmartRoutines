@@ -10,15 +10,15 @@ namespace SmartRoutines.Logic.Services;
 /// </summary>
 public sealed class LoggerService
 {
-    private readonly ILogRepository _logRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoggerService"/> class.
     /// </summary>
     /// <param name="logRepository">The log repository used to persist execution logs.</param>
-    public LoggerService(ILogRepository logRepository)
+    public LoggerService(IUnitOfWork unitOfWork)
     {
-        _logRepository = logRepository ?? throw new ArgumentNullException(nameof(logRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     /// <summary>
@@ -45,7 +45,8 @@ public sealed class LoggerService
         var details = $"[{action.Type}] {message}";
         var log = new ActivityLog(action.RoutineId, routineName, status, details);
 
-        await _logRepository.AddAsync(log);
+        await _unitOfWork.ActivityLogs.AddAsync(log);
+        await _unitOfWork.SaveChangesAsync();
     }
 }
 
