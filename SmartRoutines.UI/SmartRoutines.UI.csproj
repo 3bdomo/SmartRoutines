@@ -14,19 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controls\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Resources\Icon\**\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Controls\Abdulrahman\UC_ActionsMain.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
   </ItemGroup>
 
 	<ItemGroup>
