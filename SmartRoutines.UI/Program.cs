@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Project_2.Forms;
 using SmartRoutines.Data;
 using SmartRoutines.UI.Forms;
 
@@ -24,13 +25,13 @@ namespace SmartRoutines.UI
 
             ApplicationConfiguration.Initialize();
 
-            // var Settings = new UC_Settings();
-            // Settings.Controls.Add(new UC_Settings());
+            var frm = new FrmWizard();
+            //Settings.Controls.Add(new fr());
 
-            // Application.Run(new Form { Controls = { Settings } });
+            Application.Run(frm);
 
-            var mainForm = host.Services.GetRequiredService<FrmMain>();
-            Application.Run(mainForm);
+            //var mainForm = host.Services.GetRequiredService<FrmMain>();
+            //Application.Run(mainForm);
 
         }
     }

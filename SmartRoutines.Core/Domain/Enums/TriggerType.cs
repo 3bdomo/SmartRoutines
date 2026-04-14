@@ -10,6 +10,8 @@
         Shutdown = 5,
         Idle = 6,
         AppOpen = 7,
-        ProcessClose = 8
+        ProcessClose = 8,
+        AppLaunched = 9,
+        FileChanged = 10
     }
 }
