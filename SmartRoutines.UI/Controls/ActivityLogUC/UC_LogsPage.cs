@@ -64,22 +64,22 @@ namespace SmartRoutines.UI.Controls
 
             _allLogs = new List<ActivityLog>
             {
-                //new ActivityLog(Guid.NewGuid(), "Morning Setup",
-                //    LogStatus.Success, "All actions completed in 2.3s"),
-                // new ActivityLog(Guid.NewGuid(), "Morning Setup",
-                //    LogStatus.Success, "All actions completed in 2.3s"),
-                //  new ActivityLog(Guid.NewGuid(), "Morning Setup",
-                //    LogStatus.Success, "All actions completed in 2.3s"),
-                //   new ActivityLog(Guid.NewGuid(), "Morning Setup",
-                //    LogStatus.Success, "All actions completed in 2.3s"),
-                //    new ActivityLog(Guid.NewGuid(), "Morning Setup",
-                //    LogStatus.Success, "All actions completed in 2.3s"),
-                //     new ActivityLog(Guid.NewGuid(), "Morning Setup",
-                //    LogStatus.Success, "All actions completed in 2.3s"),
-                //     new ActivityLog(Guid.NewGuid(), "Evening Shutdown",
-                //    LogStatus.Error, "Error: backup.bat not found"),
-                //new ActivityLog(Guid.NewGuid(), "Focus Mode",
-                //    LogStatus.Warning, "Some actions completed with warnings")
+                new ActivityLog(Guid.NewGuid(), "Morning Setup",
+                    LogStatus.Success, "All actions completed in 2.3s"),
+                 new ActivityLog(Guid.NewGuid(), "Morning Setup",
+                    LogStatus.Success, "All actions completed in 2.3s"),
+                  new ActivityLog(Guid.NewGuid(), "Morning Setup",
+                    LogStatus.Success, "All actions completed in 2.3s"),
+                   new ActivityLog(Guid.NewGuid(), "Morning Setup",
+                    LogStatus.Success, "All actions completed in 2.3s"),
+                    new ActivityLog(Guid.NewGuid(), "Morning Setup",
+                    LogStatus.Success, "All actions completed in 2.3s"),
+                     new ActivityLog(Guid.NewGuid(), "Morning Setup",
+                    LogStatus.Success, "All actions completed in 2.3s"),
+                     new ActivityLog(Guid.NewGuid(), "Evening Shutdown",
+                    LogStatus.Error, "Error: backup.bat not found"),
+                new ActivityLog(Guid.NewGuid(), "Focus Mode",
+                    LogStatus.Warning, "Some actions completed with warnings")
             };
 
             _ucHistory.LoadLogs(_allLogs);

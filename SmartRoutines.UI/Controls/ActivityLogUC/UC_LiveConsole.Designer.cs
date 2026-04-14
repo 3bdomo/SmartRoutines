@@ -73,7 +73,7 @@
             pnlConsoleHeader.Margin = new Padding(4);
             pnlConsoleHeader.Name = "pnlConsoleHeader";
             pnlConsoleHeader.ShadowDecoration.CustomizableEdges = customizableEdges5;
-            pnlConsoleHeader.Size = new Size(2295, 150);
+            pnlConsoleHeader.Size = new Size(2295, 140);
             pnlConsoleHeader.TabIndex = 1;
             // 
             // pnlGreen
@@ -153,13 +153,15 @@
             // 
             AutoScaleDimensions = new SizeF(22F, 54F);
             AutoScaleMode = AutoScaleMode.Font;
-            Controls.Add(txtCommand);
-            Controls.Add(pnlConsoleHeader);
+            // Add richConsole first so Dock layout reserves space for header and footer correctly
             Controls.Add(richConsole);
+            Controls.Add(pnlConsoleHeader);
+            Controls.Add(txtCommand);
             _transition.SetDecoration(this, Guna.UI2.AnimatorNS.DecorationType.None);
             Margin = new Padding(0);
             Name = "UC_LiveConsole";
             Size = new Size(2295, 632);
+            Load += UC_LiveConsole_Load;
             pnlConsoleHeader.ResumeLayout(false);
             pnlConsoleHeader.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pnlGreen).EndInit();

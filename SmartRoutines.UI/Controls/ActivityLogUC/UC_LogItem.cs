@@ -40,6 +40,9 @@ namespace SmartRoutines.UI.Controls
 
             lblTime.Font = SmartTheme.FontCaption;
             lblTime.ForeColor = SmartTheme.TextMuted;
+            pnlSummary.BackColor = SmartTheme.Surface2;
+            pnlSummary.BorderRadius = 10;
+            lblSummaryText.ForeColor= SmartTheme.TextMuted;
 
 
             // ── Guna2CirclePictureBox ──
@@ -83,8 +86,8 @@ namespace SmartRoutines.UI.Controls
             //lblSummaryText.ForeColor = SmartTheme.TextSecondary;
 
             // ── Hover ──
-            this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface;
-            this.MouseLeave += (s, e) => this.BackColor = SmartTheme.Surface2;
+            this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface2;
+            this.MouseLeave += (s, e) => this.BackColor = SmartTheme.Surface;
 
             TooltipHelper.Set(this,
             $"<b>{log.RoutineName}</b><br>{log.Message}");
