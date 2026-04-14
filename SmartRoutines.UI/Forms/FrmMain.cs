@@ -1,5 +1,7 @@
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
+using SmartRoutines.UI.Core.Tray;
+using System.Reflection;
 
 namespace SmartRoutines.UI.Forms
 {
@@ -7,126 +9,330 @@ namespace SmartRoutines.UI.Forms
     {
         private Guna2Button? _activeNavButton;
         private bool _sidebarCollapsed = false;
-        private const int SidebarExpandedWidth = 260;
-        private const int SidebarCollapsedWidth = 76;
+        private const int SidebarExpandedWidth = 220;
+        private const int SidebarCollapsedWidth = 60;
+
+        // --- System Tray ---
+        private TrayManager _trayManager = null!;
+        private bool _forceExit = false;
+
+        // --- Timers stored as fields so they can be disposed ---
+        private System.Windows.Forms.Timer _blinkTimer = null!;
+        private System.Windows.Forms.Timer _hoverTimer = null!;
+        // Debounces window resize events so ScaleUI / AdjustCardWidths aren't called every pixel
+        private System.Windows.Forms.Timer _resizeDebounce = null!;
+        // Guards against concurrent sidebar animation timers
+        private bool _sidebarAnimating = false;
+
+        // Cached nav font - prevents allocating new Font() on every nav click
+        private Font _navFont = null!;
+
+        private Label _lblContentTitle = null!;
+        private Label _lblContentSubtitle = null!;
+        
+        // Page caching to eliminate 5-10s load times
+        private readonly System.Collections.Generic.Dictionary<Type, UserControl> _pageCache = new();
 
         public FrmMain()
         {
             InitializeComponent();
+            
+            // Performance: High quality rendering styles
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | 
+                          ControlStyles.UserPaint | 
+                          ControlStyles.OptimizedDoubleBuffer, true);
+            this.DoubleBuffered = true;
+            // Removed recursive call from constructor to prevent startup crash
 
-            // Override minimum bounds dynamically so the user can deeply test responsive web-like squishing
-            this.MinimumSize = new Size(700, 500);
+            this.MinimumSize = new Size(900, 600);
 
-            // EXTREMELY CRITICAL: Expose 2px of the absolute root Form edge. 
-            // If the child Panels sit perfectly on x=0 and y=0, they block Windows from sending 
-            // the WM_NCHITTEST (Mouse Resize) messages to the Form entirely.
-            this.Padding = new Padding(2);
+            // 4px transparent safety buffer for borderless resizing
+            this.Padding = new Padding(4);
+
+            // Debounce resize so layout code doesn't run on every drag pixel
+            _resizeDebounce = new System.Windows.Forms.Timer { Interval = 150 };
+            _resizeDebounce.Tick += (s, e) =>
+            {
+                _resizeDebounce.Stop();
+                // Sidebar breakpoint
+                if (this.Width < 1050 && !_sidebarCollapsed)
+                {
+                    _sidebarCollapsed = true;
+                    AnimateSidebar(_sidebarCollapsed);
+                }
+                else if (this.Width >= 1050 && _sidebarCollapsed)
+                {
+                    _sidebarCollapsed = false;
+                    AnimateSidebar(_sidebarCollapsed);
+                }
+                // Propagate to dashboard if visible
+                if (_currentPage is Controls.UC_Dashboard db) db.AdjustCardWidths();
+            };
 
             ApplyTheme();
+            InitializeTray();
+
+            // Pre-warm all pages in the background so the first nav click is instant.
+            // WarmUpPagesAsync runs after the handle is created and the window is visible.
+            this.HandleCreated += async (s, ev) =>
+            {
+                await WarmUpPagesAsync();
+            };
         }
 
-        // --- Low-Level OS Hit-Test Hook for Ultimate Borderless Resizability ---
-        // This ensures the outer 6 pixels of the application always behave as a resizable frame,
-        // even if inner UI components are physically rendering over them!
+        // ─── System Tray ──────────────────────────────────────────────────
+        private void InitializeTray()
+        {
+            _trayManager = new TrayManager(this);
+
+            _trayManager.RestoreRequested += RestoreFromTray;
+
+            _trayManager.ExitRequested += () =>
+            {
+                _forceExit = true;
+                Application.Exit();
+            };
+
+            _trayManager.DisableAllRequested += () =>
+            {
+                _trayManager.ShowBalloon("Smart Routines", "All routines have been disabled.", ToolTipIcon.Warning);
+            };
+
+            _trayManager.QuickRunRequested += (routineName) =>
+            {
+                _trayManager.ShowBalloon("Quick Run", $"Running \"{routineName}\"...", ToolTipIcon.Info);
+            };
+        }
+
+        public void RestoreFromTray()
+        {
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            this.BringToFront();
+            this.Activate();
+        }
+
+        private void MinimizeToTray()
+        {
+            this.Hide();
+            _trayManager.ShowBalloon("Smart Routines", "Running in background. Click the tray icon to restore.", ToolTipIcon.Info);
+        }
+
+        // ─── Close / Resize ────────────────────────────────────────────────
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (!_forceExit && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                MinimizeToTray();
+                return;
+            }
+
+            _blinkTimer?.Stop();
+            _blinkTimer?.Dispose();
+            _hoverTimer?.Stop();
+            _hoverTimer?.Dispose();
+            _resizeDebounce?.Stop();
+            _resizeDebounce?.Dispose();
+            _navFont?.Dispose();
+            _trayManager.Dispose();
+
+            base.OnFormClosing(e);
+        }
+
+        // WS_EX_COMPOSITED removed to vastly accelerate initial Form Load time / responsiveness
+
+        // Borderless resize hit-test
         protected override void WndProc(ref Message m)
         {
             const int WM_NCHITTEST = 0x0084;
-            const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+            const int HTLEFT = 10, HTRIGHT = 11;
+            const int HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
+            const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
 
-            base.WndProc(ref m);
-
-            if (m.Msg == WM_NCHITTEST && (int)m.Result == 1) // 1 = HTCLIENT
+            if (m.Msg == WM_NCHITTEST)
             {
-                int resizerSize = 6;
+                int resizerSize = 10;
                 Point screenPoint = new Point(m.LParam.ToInt32());
                 Point clientPoint = this.PointToClient(screenPoint);
 
-                if (clientPoint.Y <= resizerSize)
-                {
-                    if (clientPoint.X <= resizerSize) m.Result = (IntPtr)HTTOPLEFT;
-                    else if (clientPoint.X >= this.ClientSize.Width - resizerSize) m.Result = (IntPtr)HTTOPRIGHT;
-                    else m.Result = (IntPtr)HTTOP;
-                }
-                else if (clientPoint.Y >= this.ClientSize.Height - resizerSize)
-                {
-                    if (clientPoint.X <= resizerSize) m.Result = (IntPtr)HTBOTTOMLEFT;
-                    else if (clientPoint.X >= this.ClientSize.Width - resizerSize) m.Result = (IntPtr)HTBOTTOMRIGHT;
-                    else m.Result = (IntPtr)HTBOTTOM;
-                }
-                else if (clientPoint.X <= resizerSize) m.Result = (IntPtr)HTLEFT;
-                else if (clientPoint.X >= this.ClientSize.Width - resizerSize) m.Result = (IntPtr)HTRIGHT;
+                bool onLeft = clientPoint.X <= resizerSize;
+                bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
+                bool onTop = clientPoint.Y <= resizerSize;
+               bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
+
+                if (onTop && onLeft) { m.Result = (IntPtr)HTTOPLEFT; return; }
+                else if (onTop && onRight) { m.Result = (IntPtr)HTTOPRIGHT; return; }
+                else if (onBottom && onLeft) { m.Result = (IntPtr)HTBOTTOMLEFT; return; }
+                else if (onBottom && onRight) { m.Result = (IntPtr)HTBOTTOMRIGHT; return; }
+                else if (onTop) { m.Result = (IntPtr)HTTOP; return; }
+                else if (onBottom) { m.Result = (IntPtr)HTBOTTOM; return; }
+                else if (onLeft) { m.Result = (IntPtr)HTLEFT; return; }
+                else if (onRight) { m.Result = (IntPtr)HTRIGHT; return; }
             }
+
+            base.WndProc(ref m);
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
 
-            // Responsive auto-collapse based on pure window width
-            if (this.Width < 1050 && !_sidebarCollapsed)
+            if (WindowState == FormWindowState.Minimized)
             {
-                // Screen too tight! Auto shrink sidebar to icons.
-                _sidebarCollapsed = true;
-                AnimateSidebar(_sidebarCollapsed);
+                MinimizeToTray();
+                return;
             }
-            else if (this.Width >= 1050 && _sidebarCollapsed)
+
+            // Kick off debounce — actual layout work happens 150ms after the last resize event
+            _resizeDebounce?.Stop();
+            _resizeDebounce?.Start();
+        }
+
+        // ─── Background page warm-up ───────────────────────────────────────
+        // Creates each page on the UI thread (WinForms requires it) but defers
+        // the work to after the window has painted its first frame.
+        private async System.Threading.Tasks.Task WarmUpPagesAsync()
+        {
+            // Yield so the first frame renders fully before we start constructing pages.
+            await System.Threading.Tasks.Task.Delay(300);
+
+            if (this.IsDisposed) return;
+
+            // Warm up LogsPage
+            if (!_pageCache.ContainsKey(typeof(Controls.UC_LogsPage)))
             {
-                // Plenty of room! Auto push sidebar back to full glory.
-                _sidebarCollapsed = false;
-                AnimateSidebar(_sidebarCollapsed);
+                this.Invoke(new Action(() =>
+                {
+                    if (this.IsDisposed) return;
+                    var page = new Controls.UC_LogsPage();
+                    page.Dock = DockStyle.Fill;
+                    page.Visible = false;
+                    pnlMainContent.Controls.Add(page);
+                    _pageCache[typeof(Controls.UC_LogsPage)] = page;
+                }));
+            }
+
+            await System.Threading.Tasks.Task.Delay(100);
+            if (this.IsDisposed) return;
+
+            // Warm up Settings
+            if (!_pageCache.ContainsKey(typeof(Controls.UC_Settings)))
+            {
+                this.Invoke(new Action(() =>
+                {
+                    if (this.IsDisposed) return;
+                    var page = new Controls.UC_Settings();
+                    page.Dock = DockStyle.Fill;
+                    page.Visible = false;
+                    pnlMainContent.Controls.Add(page);
+                    _pageCache[typeof(Controls.UC_Settings)] = page;
+                }));
             }
         }
 
-        public void DisplayPage(UserControl page)
+        // ─── Page Navigation ───────────────────────────────────────────────
+        private UserControl? _currentPage;
+
+        public void DisplayPage<T>() where T : UserControl, new()
         {
-            if (pnlMainContent.Controls.Count > 0)
+            Type pageType = typeof(T);
+            
+            // 1. Hide current page (don't dispose!)
+            if (_currentPage != null)
             {
-                var oldPage = pnlMainContent.Controls[0];
-                pnlMainContent.Controls.Remove(oldPage);
-                oldPage.Dispose();
+                _currentPage.Visible = false;
             }
-            page.Dock = DockStyle.Fill;
-            pnlMainContent.Controls.Add(page);
+
+            // 2. Get or create page from cache
+            if (!_pageCache.TryGetValue(pageType, out var page))
+            {
+                page = new T();
+                page.Dock = DockStyle.Fill;
+                pnlMainContent.Controls.Add(page);
+                _pageCache[pageType] = page;
+            }
+
+            _currentPage = page;
+            _currentPage.Visible = true;
+            _currentPage.BringToFront();
+            
+            // Refresh dashboard layout if it's being shown
+            if (_currentPage is Controls.UC_Dashboard dashboard)
+            {
+                dashboard.AdjustCardWidths();
+            }
         }
 
         private void SetActiveNavButton(Guna2Button btn)
         {
+            // Lazily create the font once instead of on every nav click
+            _navFont ??= new Font("Segoe UI", 11f, FontStyle.Regular);
+
             if (_activeNavButton != null)
             {
                 _activeNavButton.FillColor = Color.Transparent;
                 _activeNavButton.ForeColor = SmartTheme.TextSecondary;
                 _activeNavButton.CustomBorderThickness = new Padding(0);
-                _activeNavButton.Font = new Font("Segoe UI", 11f, FontStyle.Regular);
-                if (_activeNavButton.Tag is string oldIcon) // Refresh image color back to gray
-                    _activeNavButton.Image = GenerateIcon(oldIcon, 22f, SmartTheme.TextSecondary);
+                _activeNavButton.BorderThickness = 0;
+                _activeNavButton.Font = _navFont;
+                if (_activeNavButton.Tag is string oldIconName)
+                    _activeNavButton.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon(oldIconName, 22);
             }
 
             _activeNavButton = btn;
-            _activeNavButton.FillColor = Color.FromArgb(30, 48, 80); // Exact rich dark blue from image
+            _activeNavButton.FillColor = Color.FromArgb(20, SmartTheme.Primary);
             _activeNavButton.ForeColor = SmartTheme.Primary;
             _activeNavButton.CustomBorderColor = SmartTheme.Primary;
-            _activeNavButton.CustomBorderThickness = new Padding(4, 0, 0, 0);
-            _activeNavButton.Font = new Font("Segoe UI", 11f, FontStyle.Regular);
+            _activeNavButton.BorderColor = Color.Transparent;
+            _activeNavButton.BorderThickness = 0;
+            _activeNavButton.CustomBorderThickness = new Padding(3, 0, 0, 0);
+            _activeNavButton.Font = _navFont;
 
-            if (_activeNavButton.Tag is string newIcon) // Refresh image color to bright blue active state
-                _activeNavButton.Image = GenerateIcon(newIcon, 22f, SmartTheme.Primary);
+            if (_activeNavButton.Tag is string newIconName)
+                _activeNavButton.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon(newIconName, 22);
+
+            // Update content header title to match active nav
+            UpdateContentTitle(btn);
+        }
+
+        private void UpdateContentTitle(Guna2Button btn)
+        {
+            if (_lblContentTitle == null || _lblContentSubtitle == null) return;
+
+            if (btn == btnNavDashboard)
+            {
+                _lblContentTitle.Text = "Dashboard";
+                _lblContentSubtitle.Text = "Manage your automation routines";
+            }
+            else if (btn == btnNavLogs)
+            {
+                _lblContentTitle.Text = "Activity Logs";
+                _lblContentSubtitle.Text = "Monitor execution history and live output";
+            }
+            else if (btn == btnNavSettings)
+            {
+                _lblContentTitle.Text = "Settings";
+                _lblContentSubtitle.Text = "Configure application preferences";
+            }
         }
 
         private void btnNavDashboard_Click(object sender, EventArgs e)
         {
             SetActiveNavButton(btnNavDashboard);
-            DisplayPage(new Controls.UC_Dashboard());
+            DisplayPage<Controls.UC_Dashboard>();
         }
 
         private void btnNavLogs_Click(object sender, EventArgs e)
         {
             SetActiveNavButton(btnNavLogs);
-            DisplayPage(new Controls.UC_LogsPage());
+            DisplayPage<Controls.UC_LogsPage>();
         }
 
         private void btnNavSettings_Click(object sender, EventArgs e)
         {
             SetActiveNavButton(btnNavSettings);
+            DisplayPage<Controls.UC_Settings>();
         }
 
         private void btnClose_Click(object sender, EventArgs e) => Application.Exit();
@@ -140,56 +346,77 @@ namespace SmartRoutines.UI.Forms
 
         private void btnMinimize_Click(object sender, EventArgs e) => WindowState = FormWindowState.Minimized;
 
+        // ─── Create New Routine button (FIX: was referenced but never defined) ─
+        private void btnCreateNew_Click(object sender, EventArgs e)
+        {
+            DisplayPage<Controls.UC_ActionsMain>();
+        }
+
+        // ─── Theme / Layout ────────────────────────────────────────────────
         private void ApplyTheme()
         {
             this.BackColor = SmartTheme.Background;
-            pnlHeader.FillColor = SmartTheme.Background;
-            lblAppTitle.Font = SmartTheme.FontSubheader;
-            lblAppTitle.ForeColor = SmartTheme.TextPrimary;
-            lblAppSubtitle.Font = SmartTheme.FontCaption;
-            lblAppSubtitle.ForeColor = SmartTheme.TextMuted;
 
-            BuildTitleBar();
+            // --- Header panel (use designer pnlHeader, do NOT rebuild it) ---
+            pnlHeader.FillColor = SmartTheme.Background;
+            pnlHeader.BorderColor = SmartTheme.Border;
+            pnlHeader.Height = 36; // FIX: match Figma thin title bar (was 60)
+
+            // Style the designer's existing window buttons
+            StyleWindowButton(btnClose, "✕", SmartTheme.Danger);
+            StyleWindowButton(btnMaximize, "□", SmartTheme.TextSecondary);
+            StyleWindowButton(btnMinimize, "─", SmartTheme.TextSecondary);
+
+            // Tiny title label already in designer
+            lblAppTitle.Font = SmartTheme.FontSmallBold;
+            lblAppTitle.ForeColor = SmartTheme.TextPrimary;
+            lblAppTitle.Text = "Smart Routines";
+            lblAppSubtitle.Visible = false; // hide in 36px bar
+
+            // Make header draggable
+            BindDragLogic(pnlHeader);
+            BindDragLogic(lblAppTitle);
+
+            // --- Content header (single panel, built once) ---
             BuildContentHeader();
 
-            // Sidebar Background
+            // --- Sidebar ---
             pnlSidebar.FillColor = Color.FromArgb(24, 24, 27);
+            pnlSidebar.Size = new Size(SidebarExpandedWidth, pnlSidebar.Height); // FIX: was 274
 
-            // Brand Logo (Gradient Square + Circle)
-            pnlLogoBase.FillColor = Color.FromArgb(139, 92, 246);    // Purple
-            pnlLogoBase.FillColor2 = Color.FromArgb(59, 130, 246);   // Blue
-            picLogoCircle.FillColor = Color.White;                    // White center
+            // Brand logo gradient (FIX: was overwriting FillColor twice, killing gradient)
+            pnlLogoBase.FillColor = Color.FromArgb(139, 92, 246); // Purple
+            pnlLogoBase.FillColor2 = Color.FromArgb(59, 130, 246); // Blue
+            picLogoCircle.FillColor = Color.White;
 
             lblBrandName.Font = new Font("Segoe UI", 13f, FontStyle.Bold);
             lblBrandName.ForeColor = Color.White;
             lblBrandSubtitle.Font = SmartTheme.FontCaption;
             lblBrandSubtitle.ForeColor = SmartTheme.TextMuted;
+            lblBrandSubtitle.AutoSize = true;
+            lblBrandSubtitle.Text = "Automation Engine";
 
-            // Collapse Button
+            // Collapse button
             btnSidebarCollapse.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             btnSidebarCollapse.FillColor = SmartTheme.Primary;
             btnSidebarCollapse.ForeColor = Color.White;
-            btnSidebarCollapse.Font = new Font("Segoe UI", 10f, FontStyle.Bold); // Standard font so text renders safely
+            btnSidebarCollapse.Font = new Font("Segoe UI", 10f, FontStyle.Bold);
             btnSidebarCollapse.Text = "<";
             btnSidebarCollapse.HoverState.FillColor = SmartTheme.PrimaryHover;
             btnSidebarCollapse.Size = new Size(24, 24);
-            btnSidebarCollapse.TextOffset = new Point(1, -1);
             btnSidebarCollapse.Left = pnlSidebar.Width - 12;
 
-            // Add 1px Separator bottom of branding area
+            // Separators
             Panel sepBrand = new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = Color.FromArgb(42, 42, 42) };
             pnlSidebarBrand.Controls.Add(sepBrand);
-
-            // Add 1px Separator top of footer area
             Panel sepFooter = new Panel { Dock = DockStyle.Top, Height = 1, BackColor = Color.FromArgb(42, 42, 42) };
             pnlSidebarFooter.Controls.Add(sepFooter);
 
-            // Engine blinking
-            var blinkTimer = new System.Windows.Forms.Timer { Interval = 1000 };
-            blinkTimer.Tick += (s, e) => pnlEngineDot.Visible = !pnlEngineDot.Visible;
-            blinkTimer.Start();
+            // Engine dot blink (FIX: stored as field so it can be disposed)
+            _blinkTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+            _blinkTimer.Tick += (s, e) => pnlEngineDot.Visible = !pnlEngineDot.Visible;
+            _blinkTimer.Start();
 
-            // Engine Footer Panel
             pnlEngineStatusBase.FillColor = Color.FromArgb(32, 32, 35);
             pnlEngineDot.FillColor = SmartTheme.Success;
             lblEngineStatus.Font = SmartTheme.FontSmallBold;
@@ -197,158 +424,58 @@ namespace SmartRoutines.UI.Forms
             lblEngineSubtitle.Font = SmartTheme.FontCaption;
             lblEngineSubtitle.ForeColor = SmartTheme.TextSecondary;
 
-            // Adjust margins for beautiful spacing
-            lblEngineStatus.Location = new Point(48, 14);
-            lblEngineSubtitle.Location = new Point(48, 36);
-            pnlEngineDot.Location = new Point(22, 28);
+            lblEngineStatus.Location = new Point(36, 14);
+            lblEngineSubtitle.Location = new Point(36, 36);
+            pnlEngineDot.Location = new Point(16, 18);
 
             InitializeEngineHover();
 
-            // Sidebar Nav Items padding and styling
-            StyleNavButton(btnNavDashboard, "⊞", "Dashboard");
-            StyleNavButton(btnNavLogs, "⚡", "Activity Logs");
-            StyleNavButton(btnNavSettings, "⚙", "Settings");
+            // Nav buttons
+            StyleNavButton(btnNavDashboard, "dashboard.png", "Dashboard");
+            StyleNavButton(btnNavLogs, "activity.png", "Activity Logs");
+            StyleNavButton(btnNavSettings, "settings.png", "Settings");
 
+            // Main content
             pnlMainContent.FillColor = SmartTheme.Background;
 
-            StyleWindowButton(btnClose, "✕", SmartTheme.Danger);
-            StyleWindowButton(btnMaximize, "□", SmartTheme.TextSecondary);
-            StyleWindowButton(btnMinimize, "─", SmartTheme.TextSecondary);
+            // Apply optimizations selectively to main panels after they are initialized
+            SmartRoutines.UI.Core.Helper.ControlOptimizations.EnableDoubleBuffered(pnlSidebar);
+            SmartRoutines.UI.Core.Helper.ControlOptimizations.EnableDoubleBuffered(pnlMainContent);
 
+            // Start on Dashboard - DEFERRED safely
             SetActiveNavButton(btnNavDashboard);
-            DisplayPage(new Controls.UC_Dashboard());
-        }
-
-        private void BuildTitleBar()
-        {
-            pnlHeader.Controls.Clear();
-            pnlHeader.Height = 36; // Tiny Windows 11 style title bar
-            pnlHeader.Dock = DockStyle.Top;
-            pnlHeader.FillColor = SmartTheme.Background;
-            pnlHeader.BorderThickness = 0;
-
-            // 1. Right Section (Window Controls)
-            var pnlRightControls = new FlowLayoutPanel
+            
+            if (this.IsHandleCreated)
             {
-                Dock = DockStyle.Right,
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                WrapContents = false,
-                FlowDirection = FlowDirection.RightToLeft,
-                Padding = new Padding(0),
-                Margin = new Padding(0),
-                BackColor = Color.Transparent
-            };
-
-            var btnCloseWin = new Button
+                this.BeginInvoke(new Action(() => {
+                    DisplayPage<Controls.UC_Dashboard>();
+                }));
+            }
+            else
             {
-                Size = new Size(46, pnlHeader.Height),
-                FlatStyle = FlatStyle.Flat,
-                Text = "✕",
-                Font = new Font("Segoe UI", 10f),
-                ForeColor = SmartTheme.TextSecondary,
-                BackColor = Color.Transparent,
-                Cursor = Cursors.Default,
-                Margin = new Padding(0)
-            };
-            btnCloseWin.FlatAppearance.BorderSize = 0;
-            btnCloseWin.FlatAppearance.MouseOverBackColor = Color.FromArgb(232, 17, 35);
-            btnCloseWin.FlatAppearance.MouseDownBackColor = Color.FromArgb(190, 15, 30);
-            btnCloseWin.MouseEnter += (s, e) => btnCloseWin.ForeColor = Color.White;
-            btnCloseWin.MouseLeave += (s, e) => btnCloseWin.ForeColor = SmartTheme.TextSecondary;
-            btnCloseWin.Click += (s, e) => Application.Exit();
-
-            var btnMaxWin = new Button
-            {
-                Size = new Size(46, pnlHeader.Height),
-                FlatStyle = FlatStyle.Flat,
-                Text = "□",
-                Font = new Font("Segoe UI", 11f),
-                ForeColor = SmartTheme.TextSecondary,
-                BackColor = Color.Transparent,
-                Cursor = Cursors.Default,
-                Margin = new Padding(0)
-            };
-            btnMaxWin.FlatAppearance.BorderSize = 0;
-            btnMaxWin.FlatAppearance.MouseOverBackColor = SmartTheme.Surface2;
-            btnMaxWin.MouseEnter += (s, e) => btnMaxWin.ForeColor = SmartTheme.TextPrimary;
-            btnMaxWin.MouseLeave += (s, e) => btnMaxWin.ForeColor = SmartTheme.TextSecondary;
-            btnMaxWin.Click += (s, e) => WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
-
-            var btnMinWin = new Button
-            {
-                Size = new Size(46, pnlHeader.Height),
-                FlatStyle = FlatStyle.Flat,
-                Text = "─",
-                Font = new Font("Segoe UI", 11f),
-                ForeColor = SmartTheme.TextSecondary,
-                BackColor = Color.Transparent,
-                Cursor = Cursors.Default,
-                Margin = new Padding(0)
-            };
-            btnMinWin.FlatAppearance.BorderSize = 0;
-            btnMinWin.FlatAppearance.MouseOverBackColor = SmartTheme.Surface2;
-            btnMinWin.MouseEnter += (s, e) => btnMinWin.ForeColor = SmartTheme.TextPrimary;
-            btnMinWin.MouseLeave += (s, e) => btnMinWin.ForeColor = SmartTheme.TextSecondary;
-            btnMinWin.Click += (s, e) => WindowState = FormWindowState.Minimized;
-
-            pnlRightControls.Controls.Add(btnCloseWin);
-            pnlRightControls.Controls.Add(btnMaxWin);
-            pnlRightControls.Controls.Add(btnMinWin);
-
-            // 2. Left Section (Tiny App Logo)
-            var pnlLeftControls = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                WrapContents = false,
-                FlowDirection = FlowDirection.LeftToRight,
-                Padding = new Padding(24, 8, 0, 0),
-                Margin = new Padding(0),
-                BackColor = Color.Transparent
-            };
-
-            var picTinyLogo = new Guna.UI2.WinForms.Guna2Panel
-            {
-                Size = new Size(16, 16),
-                BorderRadius = 4,
-                FillColor = SmartTheme.Primary,
-                Margin = new Padding(0, 2, 8, 0)
-            };
-
-            var lblTinyTitle = new Label
-            {
-                Text = "Smart Routines",
-                Font = SmartTheme.FontSmallBold,
-                ForeColor = SmartTheme.TextPrimary,
-                AutoSize = true,
-                Margin = new Padding(0, 0, 0, 0)
-            };
-
-            pnlLeftControls.Controls.Add(picTinyLogo);
-            pnlLeftControls.Controls.Add(lblTinyTitle);
-
-            // Assembly & Physics
-            pnlHeader.Controls.Add(pnlRightControls);
-            pnlHeader.Controls.Add(pnlLeftControls);
-            pnlLeftControls.BringToFront();
-
-            BindDragLogic(pnlHeader);
-            BindDragLogic(pnlLeftControls);
-            BindDragLogic(lblTinyTitle);
-            BindDragLogic(picTinyLogo);
+                this.HandleCreated += (s, ev) => {
+                    this.BeginInvoke(new Action(() => {
+                        DisplayPage<Controls.UC_Dashboard>();
+                    }));
+                };
+            }
         }
 
         private void BuildContentHeader()
         {
+            // FIX: this is now a SINGLE panel added once — not rebuilt on every nav click.
+            // The title label reference is stored in _lblContentTitle so UpdateContentTitle()
+            // can update it when the user switches pages.
+
+            // FIX: Increased height from 72 to 92 to prevent subtitle overflow on Dashboard cards
             var pnlContentHeader = new Guna.UI2.WinForms.Guna2Panel
             {
                 Dock = DockStyle.Top,
-                Height = 84,
+                Height = 92,
                 FillColor = SmartTheme.Background,
                 BorderThickness = 0
             };
 
-            // Separator between content header and content
             var sepBottom = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -356,45 +483,52 @@ namespace SmartRoutines.UI.Forms
                 BackColor = SmartTheme.Border
             };
 
-            // 1. Right Section (Actions)
-            var pnlActionsFlow = new FlowLayoutPanel
+            // Right: action buttons
+            var pnlActions = new FlowLayoutPanel
             {
                 Dock = DockStyle.Right,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = false,
                 FlowDirection = FlowDirection.RightToLeft,
-                Padding = new Padding(0, 22, 24, 0),
+                Padding = new Padding(0, 16, 20, 0),
                 Margin = new Padding(0),
                 BackColor = Color.Transparent
             };
 
             var btnCreateNew = new Guna.UI2.WinForms.Guna2GradientButton
             {
-                Text = "＋ Create New Routine",
+                Text = "+ Create New Routine",
                 Font = SmartTheme.FontSmallBold,
                 ForeColor = Color.White,
-                Size = new Size(170, 40),
+                Size = new Size(180, 38),
                 BorderRadius = 8,
                 FillColor = SmartTheme.Primary,
                 FillColor2 = SmartTheme.Purple,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 16, 0)
+                Margin = new Padding(0, 0, 12, 0)
             };
-
+            btnCreateNew.Click += btnCreateNew_Click;
+            
             var btnTheme = new Guna.UI2.WinForms.Guna2Button
             {
-                Text = "⚙",
+                Text = "☼",
                 Font = new Font("Segoe UI Symbol", 12f),
                 ForeColor = SmartTheme.TextSecondary,
                 FillColor = SmartTheme.Surface2,
-                Size = new Size(40, 40),
+                Size = new Size(38, 38),
                 BorderRadius = 8,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 12, 0)
+                Margin = new Padding(0, 0, 8, 0)
             };
             btnTheme.HoverState.FillColor = SmartTheme.Surface3;
-            btnTheme.HoverState.ForeColor = SmartTheme.TextPrimary;
+
+            var pnlBellContainer = new Guna.UI2.WinForms.Guna2Panel
+            {
+                Size = new Size(38, 38),
+                Margin = new Padding(0, 0, 8, 0),
+                BackColor = Color.Transparent
+            };
 
             var btnNotif = new Guna.UI2.WinForms.Guna2Button
             {
@@ -402,59 +536,51 @@ namespace SmartRoutines.UI.Forms
                 Font = new Font("Segoe UI Symbol", 11f),
                 ForeColor = SmartTheme.TextSecondary,
                 FillColor = SmartTheme.Surface2,
-                Size = new Size(40, 40),
+                Size = new Size(38, 38),
                 BorderRadius = 8,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0)
+                Location = new Point(0, 0)
             };
             btnNotif.HoverState.FillColor = SmartTheme.Surface3;
-            btnNotif.HoverState.ForeColor = SmartTheme.TextPrimary;
 
-            // Notification Dot
-            var pnlDotBase = new Guna.UI2.WinForms.Guna2Panel
-            {
-                Size = new Size(12, 12),
-                Location = new Point(22, 6),
-                FillColor = SmartTheme.Surface2,
-                BorderRadius = 6,
-                UseTransparentBackground = true
-            };
-            var pnlDot = new Guna.UI2.WinForms.Guna2Panel
+            var notifDot = new Guna.UI2.WinForms.Guna2Panel
             {
                 Size = new Size(8, 8),
-                Location = new Point(2, 2),
                 FillColor = SmartTheme.Danger,
                 BorderRadius = 4,
-                UseTransparentBackground = true
+                Location = new Point(26, 4) // Top right corner inside the button
             };
-            pnlDotBase.Controls.Add(pnlDot);
-            btnNotif.Controls.Add(pnlDotBase);
 
-            pnlActionsFlow.Controls.Add(btnCreateNew);
-            pnlActionsFlow.Controls.Add(btnTheme);
-            pnlActionsFlow.Controls.Add(btnNotif);
+            pnlBellContainer.Controls.Add(notifDot);
+            pnlBellContainer.Controls.Add(btnNotif);
+            notifDot.BringToFront();
 
-            // 2. Left Section (Breadcrumbs)
-            var pnlBreadcrumbsFlow = new FlowLayoutPanel
+            // Right-to-left flow adds items visually right-to-left
+            pnlActions.Controls.Add(btnCreateNew);
+            pnlActions.Controls.Add(btnTheme);
+            pnlActions.Controls.Add(pnlBellContainer);
+
+            // Left: breadcrumb title (stored as field)
+            var pnlBreadcrumb = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
+                FlowDirection = FlowDirection.TopDown,
                 WrapContents = false,
-                Padding = new Padding(24, 28, 0, 0),
+                Padding = new Padding(24, 16, 0, 0),
                 Margin = new Padding(0),
                 BackColor = Color.Transparent
             };
 
-            var lblTitle = new Label
+            _lblContentTitle = new Label
             {
                 Text = "Dashboard",
                 Font = SmartTheme.FontHeader,
                 ForeColor = SmartTheme.TextPrimary,
                 AutoSize = true,
-                Margin = new Padding(0, 0, 8, 0)
+                Margin = new Padding(0)
             };
 
-            var lblSubtitle = new Label
+            _lblContentSubtitle = new Label
             {
                 Text = "Manage your automation routines",
                 Font = SmartTheme.FontBody,
@@ -463,18 +589,19 @@ namespace SmartRoutines.UI.Forms
                 Margin = new Padding(0, 4, 0, 0)
             };
 
-            pnlBreadcrumbsFlow.Controls.Add(lblTitle);
-            pnlBreadcrumbsFlow.Controls.Add(lblSubtitle);
+            pnlBreadcrumb.Controls.Add(_lblContentTitle);
+            pnlBreadcrumb.Controls.Add(_lblContentSubtitle);
 
             pnlContentHeader.Controls.Add(sepBottom);
-            pnlContentHeader.Controls.Add(pnlActionsFlow);
-            pnlContentHeader.Controls.Add(pnlBreadcrumbsFlow);
-            pnlBreadcrumbsFlow.BringToFront();
+            pnlContentHeader.Controls.Add(pnlActions);
+            pnlContentHeader.Controls.Add(pnlBreadcrumb);
+            pnlBreadcrumb.BringToFront();
 
             pnlMainContent.Controls.Add(pnlContentHeader);
-            pnlContentHeader.BringToFront(); // Secure top dock within main content
+            pnlContentHeader.BringToFront();
         }
 
+        // ─── Drag logic ────────────────────────────────────────────────────
         private bool _isDragging = false;
         private Point _dragStartPoint;
 
@@ -482,7 +609,9 @@ namespace SmartRoutines.UI.Forms
         {
             ctrl.DoubleClick += (s, e) =>
             {
-                WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+                WindowState = WindowState == FormWindowState.Maximized
+                    ? FormWindowState.Normal
+                    : FormWindowState.Maximized;
             };
 
             ctrl.MouseDown += (s, e) =>
@@ -499,7 +628,8 @@ namespace SmartRoutines.UI.Forms
                 if (_isDragging && WindowState != FormWindowState.Maximized)
                 {
                     Point p = PointToScreen(e.Location);
-                    Location = new Point(p.X - _dragStartPoint.X - ctrl.Left, p.Y - _dragStartPoint.Y - ctrl.Top);
+                    Location = new Point(p.X - _dragStartPoint.X - ctrl.Left,
+                                         p.Y - _dragStartPoint.Y - ctrl.Top);
                 }
             };
 
@@ -510,8 +640,7 @@ namespace SmartRoutines.UI.Forms
             };
         }
 
-
-
+        // ─── Icon helpers ──────────────────────────────────────────────────
         private Image GenerateIcon(string text, float emSize, Color color)
         {
             var bmp = new Bitmap(32, 32);
@@ -519,27 +648,25 @@ namespace SmartRoutines.UI.Forms
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-                using (var font = new Font("Segoe UI Symbol", emSize, FontStyle.Regular))
-                using (var brush = new SolidBrush(color))
+                using var font = new Font("Segoe UI Symbol", emSize, FontStyle.Regular);
+                using var brush = new SolidBrush(color);
+                var fmt = new StringFormat
                 {
-                    var format = new StringFormat
-                    {
-                        Alignment = StringAlignment.Center,
-                        LineAlignment = StringAlignment.Center
-                    };
-                    g.DrawString(text, font, brush, new RectangleF(0, -2, 32, 32), format);
-                }
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
+                g.DrawString(text, font, brush, new RectangleF(0, -2, 32, 32), fmt);
             }
             return bmp;
         }
 
-        private void StyleNavButton(Guna2Button btn, string icon, string text)
+        private void StyleNavButton(Guna2Button btn, string iconFileName, string text)
         {
-            btn.Tag = icon; // Store icon string to swap color on active state
+            btn.Tag = iconFileName;
             btn.Text = text;
-            btn.Image = GenerateIcon(icon, 22f, SmartTheme.TextSecondary); // Render beautiful dynamically scaled large icon
+            btn.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon(iconFileName, 22);
             btn.ImageAlign = HorizontalAlignment.Left;
-            btn.ImageOffset = new Point(4, 0); // Spacing layout perfect
+            btn.ImageOffset = new Point(4, 0);
             btn.TextOffset = new Point(8, 0);
 
             btn.FillColor = Color.Transparent;
@@ -563,6 +690,7 @@ namespace SmartRoutines.UI.Forms
             btn.HoverState.FillColor = SmartTheme.Surface2;
         }
 
+        // ─── Sidebar animation ─────────────────────────────────────────────
         private void btnSidebarCollapse_Click(object sender, EventArgs e)
         {
             _sidebarCollapsed = !_sidebarCollapsed;
@@ -571,6 +699,10 @@ namespace SmartRoutines.UI.Forms
 
         private void AnimateSidebar(bool collapse)
         {
+            // Guard: prevent stacking multiple concurrent animation timers
+            if (_sidebarAnimating) return;
+            _sidebarAnimating = true;
+
             int targetWidth = collapse ? SidebarCollapsedWidth : SidebarExpandedWidth;
             string chevron = collapse ? ">" : "<";
 
@@ -583,18 +715,26 @@ namespace SmartRoutines.UI.Forms
             timer.Tick += (s, e) =>
             {
                 int current = pnlSidebar.Width;
-                int diff = targetWidth - current;
-                int step = (int)(diff * 0.28);
+                int diff    = targetWidth - current;
+                int step    = (int)(diff * 0.28);
                 if (step == 0 && diff != 0) step = Math.Sign(diff);
-                int next = current + step;
+                int next    = current + step;
 
                 if (Math.Abs(targetWidth - next) <= 1)
                 {
+                    this.SuspendLayout();
+                    pnlSidebar.SuspendLayout();
+
                     pnlSidebar.Width = targetWidth;
                     btnSidebarCollapse.Text = chevron;
                     btnSidebarCollapse.Left = targetWidth - 14;
+
+                    pnlSidebar.ResumeLayout(true);
+                    this.ResumeLayout(false);
+
                     timer.Stop();
                     timer.Dispose();
+                    _sidebarAnimating = false;
                     return;
                 }
 
@@ -604,37 +744,66 @@ namespace SmartRoutines.UI.Forms
             timer.Start();
         }
 
+        // ─── Double buffer via reflection ──────────────────────────────────
+        private static void EnableDoubleBuffering(Control control)
+        {
+            PropertyInfo? prop = typeof(Control).GetProperty(
+                "DoubleBuffered",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            prop?.SetValue(control, true, null);
+        }
+
+        // ─── Engine hover animation ───────────────────────────────────────
         private void InitializeEngineHover()
         {
-            var hoverTimer = new System.Windows.Forms.Timer { Interval = 16 };
-            int currentAnimState = 0; // Anim state range 0 -> 100
+            int currentAnimState = 0;
 
             pnlEngineStatusBase.Cursor = Cursors.Hand;
             lblEngineStatus.Cursor = Cursors.Hand;
             lblEngineSubtitle.Cursor = Cursors.Hand;
 
-            hoverTimer.Tick += (s, e) =>
+            // Timer only runs during hover animation, NOT continuously at startup.
+            // This saves ~60 unnecessary UI-thread wakeups per second.
+            _hoverTimer = new System.Windows.Forms.Timer { Interval = 16 };
+            _hoverTimer.Tick += (s, e) =>
             {
-                // Flicker-free universal bounds checking
                 Point mouseAt = pnlEngineStatusBase.PointToClient(Cursor.Position);
                 bool isHovering = pnlEngineStatusBase.ClientRectangle.Contains(mouseAt) && !_sidebarCollapsed;
 
                 if (isHovering && currentAnimState < 100) currentAnimState += 12;
                 else if (!isHovering && currentAnimState > 0) currentAnimState -= 10;
 
-                if (currentAnimState < 0) currentAnimState = 0;
-                if (currentAnimState > 100) currentAnimState = 100;
+                currentAnimState = Math.Clamp(currentAnimState, 0, 100);
 
-                // Color lightup calculation
                 int baseRgb = 32;
-                int brightOffset = (int)(currentAnimState * 0.15); // max 15 brightness
-                pnlEngineStatusBase.FillColor = Color.FromArgb(baseRgb + brightOffset, baseRgb + brightOffset + 2, baseRgb + brightOffset + 7);
+                int brightOffset = (int)(currentAnimState * 0.15);
+                pnlEngineStatusBase.FillColor = Color.FromArgb(
+                    baseRgb + brightOffset,
+                    baseRgb + brightOffset + 2,
+                    baseRgb + brightOffset + 7);
 
-                // Emulate physical scaling by compressing padding uniformly
-                int shift = currentAnimState / 33; // max shift 3 pixels
+                int shift = currentAnimState / 33;
                 pnlEngineStatusBase.Padding = new Padding(shift);
+
+                // Auto-stop when fully settled in un-hovered state — no more CPU burn
+                if (!isHovering && currentAnimState == 0)
+                    _hoverTimer.Stop();
             };
-            hoverTimer.Start();
+
+            // Start the timer only when the user actually hovers over the engine panel
+            pnlEngineStatusBase.MouseEnter += (s, e) => _hoverTimer.Start();
+            lblEngineStatus.MouseEnter     += (s, e) => _hoverTimer.Start();
+            lblEngineSubtitle.MouseEnter   += (s, e) => _hoverTimer.Start();
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams cp = base.CreateParams;
+                cp.ExStyle |= SmartRoutines.UI.Core.Helper.ControlOptimizations.WS_EX_COMPOSITED;
+                return cp;
+            }
         }
     }
 }

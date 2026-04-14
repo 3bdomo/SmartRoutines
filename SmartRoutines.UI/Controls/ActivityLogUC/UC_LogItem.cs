@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualBasic.Logging;
-using SmartRoutines.Core.Enums;
-using SmartRoutines.Core.Models;
+using Microsoft.VisualBasic.Logging;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.UI.Core.Healper;
 using SmartRoutines.UI.Core.Theme;
 using System;
@@ -49,30 +49,28 @@ namespace SmartRoutines.UI.Controls
 
             picStatus.Size = new Size(50, 50);
             picStatus.SizeMode = PictureBoxSizeMode.Zoom;
-            picStatus.Padding = new Padding(8);
+            picStatus.Padding = new Padding(0);
+            picStatus.BackColor = Color.Transparent;
 
             switch (log.Status)
             {
                 case LogStatus.Success:
-                    //  picStatus.FillColor = SmartTheme.Success;
-                    picStatus.BackColor = SmartTheme.Success;
-                    picStatus.Image = Properties.Resources.check_circle;
-
-
+                    pnlIcon.FillColor = Color.FromArgb(76, 175, 80); // Figma Green
+                    picStatus.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("status_ok.png", 18);
                     break;
 
                 case LogStatus.Error:
-                    picStatus.BackColor = SmartTheme.Danger;
-                    picStatus.Image = Properties.Resources.cross_circle;
+                    pnlIcon.FillColor = SmartTheme.Danger;
+                    picStatus.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("status_error.png", 18);
                     break;
 
-                //case LogStatus.Warning:
-                //    picStatus.BackColor = SmartTheme.Warning;
-                //    picStatus.Image = Properties.Resources.cross_circle;
-                //    break;
+                case LogStatus.Warning:
+                    pnlIcon.FillColor = SmartTheme.Warning;
+                    picStatus.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("status_error.png", 18); 
+                    break;
 
                 default:
-                    picStatus.BackColor = SmartTheme.TextMuted;
+                    pnlIcon.FillColor = SmartTheme.TextMuted;
                     break;
             }
             // -----------------------------------
@@ -87,11 +85,19 @@ namespace SmartRoutines.UI.Controls
 
             // ── Hover ──
             this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface2;
-            this.MouseLeave += (s, e) => this.BackColor = SmartTheme.Surface;
+            this.MouseLeave += (s, e) => this.BackColor = Color.Transparent;
 
             TooltipHelper.Set(this,
             $"<b>{log.RoutineName}</b><br>{log.Message}");
 
+            // ── Draw Figma Separator Line ──
+            this.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(SmartTheme.Border, 1))
+                {
+                    e.Graphics.DrawLine(pen, 0, this.Height - 1, this.Width, this.Height - 1);
+                }
+            };
         }
 
         private void RoutenNameLab_Click(object sender, EventArgs e)

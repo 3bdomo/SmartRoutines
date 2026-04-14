@@ -1,46 +1,101 @@
-using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.Exceptions;
-using SmartRoutines.Core.Interfaces;
-using SmartRoutines.Core.Models;
+using SmartRoutines.Core.Interfaces.Logic;
+using SmartRoutines.Logic.Services;
 
 namespace SmartRoutines.Logic
 {
+    /// <summary>
+    /// Executes a routine action list by selecting the proper strategy for each action type.
+    /// </summary>
     public class ActionRunner
     {
-        private readonly List<IAction> _actions;
-        private readonly ActionContext _actionContext;
-        private readonly ActionEntry _actionEntry;
+        private readonly IReadOnlyDictionary<ActionType, IAction> _actionMap;
+        private readonly LoggerService _loggerService;
 
-        public ActionRunner(List<IAction> actions, ActionContext actionContext, ActionEntry actionEntry)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ActionRunner"/> class.
+        /// </summary>
+        /// <param name="actions">The available action executor strategies.</param>
+        /// <param name="loggerService">Service used to persist execution results.</param>
+        public ActionRunner(IEnumerable<IAction> actions, LoggerService loggerService)
         {
-            _actions = actions;
-            _actionContext = actionContext;
-            _actionEntry = actionEntry;
+            if (actions is null)
+            {
+                throw new ArgumentNullException(nameof(actions));
+            }
+
+            _loggerService = loggerService ?? throw new ArgumentNullException(nameof(loggerService));
+            _actionMap = BuildActionMap(actions);
         }
 
-        public void Run()
+        /// <summary>
+        /// Executes all provided actions in execution-order sequence.
+        /// </summary>
+        /// <param name="actionEntries">The actions to execute.</param>
+        /// <param name="actionContext">The runtime context for this routine run.</param>
+        /// <param name="cancellationToken">A token that can cancel execution.</param>
+        /// <returns>A task that completes after all actions are attempted.</returns>
+        public async Task RunAsync(IEnumerable<ActionEntry> actionEntries, ActionContext actionContext, CancellationToken cancellationToken = default)
         {
-            foreach (var action in _actions)
+            if (actionEntries is null)
             {
+                throw new ArgumentNullException(nameof(actionEntries));
+            }
+
+            if (actionContext is null)
+            {
+                throw new ArgumentNullException(nameof(actionContext));
+            }
+
+            foreach (var entry in actionEntries.OrderBy(x => x.ExecutionOrder))
+            {
+                if (!_actionMap.TryGetValue(entry.Type, out var action))
+                {
+                    await _loggerService.LogActionResultAsync(entry, actionContext, LogStatus.Warning, "No executor is registered for this action type.");
+                    continue;
+                }
+
                 try
                 {
-                    action.Execute(_actionEntry,_actionContext);
-                    // Notify Member 4 of SUCCESS
-                    // ReportToTracker(action.ActionName, "SUCCESS", null);
+                    await action.ExecuteAsync(entry, actionContext, cancellationToken);
+                    await _loggerService.LogActionResultAsync(entry, actionContext, LogStatus.Success, "Action executed successfully.");
                 }
                 catch (ActionFailedException ex)
                 {
-                    // SRS Requirement: A failed action must not stop remaining actions 
-                    // Notify Member 4 of FAILURE with specific details
-                    // ReportToTracker(ex.ActionType, "FAILURE", ex.Message);
+                    await _loggerService.LogActionResultAsync(entry, actionContext, LogStatus.Error, ex.Message);
+                }
+                catch (OperationCanceledException)
+                {
+                    await _loggerService.LogActionResultAsync(entry, actionContext, LogStatus.Warning, "Action execution canceled.");
+                    throw;
                 }
                 catch (Exception ex)
                 {
-                    // Catch-all for unexpected crashes to keep the app running
-                    // ReportToTracker("Unknown", "CRITICAL_FAILURE", ex.Message);
+                    await _loggerService.LogActionResultAsync(entry, actionContext, LogStatus.Error, $"Unexpected error: {ex.Message}");
                 }
             }
+        }
+
+        private static IReadOnlyDictionary<ActionType, IAction> BuildActionMap(IEnumerable<IAction> actions)
+        {
+            var map = new Dictionary<ActionType, IAction>();
+
+            foreach (var action in actions)
+            {
+                foreach (var type in action.SupportedActionTypes)
+                {
+                    if (!map.TryAdd(type, action))
+                    {
+                        throw new InvalidOperationException($"Duplicate executor registration for action type: {type}.");
+                    }
+                }
+            }
+
+            return new ReadOnlyDictionary<ActionType, IAction>(map);
         }
     }
 }

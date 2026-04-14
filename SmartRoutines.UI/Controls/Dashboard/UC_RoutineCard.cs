@@ -9,20 +9,97 @@ namespace SmartRoutines.UI.Controls
 {
     public partial class UC_RoutineCard : SmartUserControl
     {
+        public event EventHandler StateChanged = null!;
+
         private bool _isActive = true;
         private bool _isRunning = false;
+
+        private Guna2GradientPanel _pnlIcon = null!;
+        private Guna2Panel _pnlScheduleRegion = null!;
+
+        // Font cache — prevents GDI+ handle leaks from creating new Font objects on every resize tick
+        private float _cachedScaleFactor = -1f;
+        private Font? _cachedFontSubheader;
+        private Font? _cachedFontBody;
 
         public UC_RoutineCard()
         {
             InitializeComponent();
+            
+            // Performance: High quality rendering styles
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | 
+                          ControlStyles.UserPaint | 
+                          ControlStyles.OptimizedDoubleBuffer, true);
+            this.DoubleBuffered = true;
+
+            this.MinimumSize = new Size(260, 200);
+            this.BackColor = Color.Transparent;
+
+            BuildGradientIcon();
+            BuildScheduleRegion();
             ApplyTheme();
         }
 
+        // ─── Gradient icon block ───────────────────────────────────────────
+        private void BuildGradientIcon()
+        {
+            _pnlIcon = new Guna2GradientPanel
+            {
+                Size = new Size(52, 52), // Larger for better balance
+                Location = new Point(20, 20),
+                BorderRadius = 14,
+                FillColor = Color.FromArgb(99, 102, 241),
+                FillColor2 = Color.FromArgb(56, 189, 248),
+                GradientMode = System.Drawing.Drawing2D.LinearGradientMode.ForwardDiagonal
+            };
+
+            // Maintain icon position during container resizes
+            _pnlIcon.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+
+            var iconPic = new PictureBox
+            {
+                Name = "iconPic",
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Size = new Size(26, 26),
+                BackColor = Color.Transparent,
+                Location = new Point(13, 13) // Centralize in 52x52
+            };
+            _pnlIcon.Controls.Add(iconPic);
+
+            pnlBase.Controls.Remove(pbIcon);
+            pnlBase.Controls.Add(_pnlIcon);
+        }
+
+        // ─── Rounded schedule region ───────────────────────────────────────
+        private void BuildScheduleRegion()
+        {
+            _pnlScheduleRegion = new Guna2Panel
+            {
+                Size = pnlDivider.Size,
+                Location = pnlDivider.Location,
+                FillColor = Color.FromArgb(24, 24, 27),
+                BorderRadius = 8,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            pnlBase.Controls.Remove(pnlDivider);
+            pnlBase.Controls.Add(_pnlScheduleRegion);
+            _pnlScheduleRegion.SendToBack();
+
+            pnlBase.Controls.Remove(lblSchedule);
+            pnlBase.Controls.Remove(lblActions);
+            lblSchedule.Location = new Point(10, 8);
+            lblActions.Location = new Point(10, 30);
+            _pnlScheduleRegion.Controls.Add(lblSchedule);
+            _pnlScheduleRegion.Controls.Add(lblActions);
+        }
+
+        // ─── Properties ───────────────────────────────────────────────────
         [Category("Routine Data")]
         public string RoutineName
         {
             get => lblName.Text;
-            set => lblName.Text = value;
+            set { lblName.Text = value; UpdateDynamicIcon(); }
         }
 
         [Category("Routine Data")]
@@ -36,7 +113,7 @@ namespace SmartRoutines.UI.Controls
         public string ScheduleText
         {
             get => lblSchedule.Text;
-            set => lblSchedule.Text = "⏱️ " + value;
+            set => lblSchedule.Text = value;
         }
 
         [Category("Routine Data")]
@@ -45,12 +122,47 @@ namespace SmartRoutines.UI.Controls
             get => lblActions.Text;
             set => lblActions.Text = value;
         }
-        
+
+        private PictureBox? _statusIconPic;
         [Category("Routine Data")]
         public string LastRunText
         {
             get => lblLastRun.Text;
-            set => lblLastRun.Text = value;
+            set
+            {
+                if (_statusIconPic == null)
+                {
+                    _statusIconPic = new PictureBox
+                    {
+                        Size = new Size(16, 16),
+                        Location = new Point(lblLastRun.Left, lblLastRun.Top + 2),
+                        SizeMode = PictureBoxSizeMode.Zoom,
+                        BackColor = Color.Transparent
+                    };
+                    pnlBase.Controls.Add(_statusIconPic);
+                    _statusIconPic.BringToFront();
+                    lblLastRun.Left += 22;
+                }
+
+                if (value.StartsWith("✔ ") || value.ToLower().Contains("success"))
+                {
+                    lblLastRun.Text = value.StartsWith("✔ ") ? value.Substring(2) : value;
+                    _statusIconPic.Visible = true;
+                    _statusIconPic.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("success.png", 16);
+                }
+                else if (value.StartsWith("✖ ") || value.ToLower().Contains("error"))
+                {
+                    lblLastRun.Text = value.StartsWith("✖ ") ? value.Substring(2) : value;
+                    _statusIconPic.Visible = true;
+                    _statusIconPic.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("error.png", 16);
+                }
+                else
+                {
+                    lblLastRun.Text = value;
+                    _statusIconPic.Visible = false;
+                }
+                lblLastRun.ForeColor = SmartTheme.TextSecondary;
+            }
         }
 
         [Category("Routine State")]
@@ -71,82 +183,114 @@ namespace SmartRoutines.UI.Controls
             get => _isRunning;
             set
             {
+                if (_isRunning == value) return;
                 _isRunning = value;
                 UpdateStateStyle();
+                StateChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
+        // ─── Dynamic icon based on routine name ────────────────────────────
+        private void UpdateDynamicIcon()
+        {
+            if (_pnlIcon == null || _pnlIcon.Controls.Count == 0) return;
+            var pic = _pnlIcon.Controls["iconPic"] as PictureBox;
+            if (pic == null) return;
+
+            string name = lblName.Text.ToLower();
+            if (name.Contains("morning"))
+            {
+                pic.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("activity.png", 24);
+                _pnlIcon.FillColor = Color.FromArgb(0, 120, 212);
+                _pnlIcon.FillColor2 = Color.FromArgb(100, 170, 255);
+            }
+            else if (name.Contains("focus"))
+            {
+                pic.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("dashboard.png", 24);
+                _pnlIcon.FillColor = Color.FromArgb(139, 92, 246);
+                _pnlIcon.FillColor2 = Color.FromArgb(236, 72, 153);
+            }
+            else
+            {
+                pic.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("dashboard.png", 24);
+                _pnlIcon.FillColor = SmartTheme.Primary;
+                _pnlIcon.FillColor2 = SmartTheme.Purple;
+            }
+        }
+
+        // ─── Theme ────────────────────────────────────────────────────────
         private void ApplyTheme()
         {
             this.BackColor = Color.Transparent;
 
-            // Base Panel
             pnlBase.FillColor = SmartTheme.Surface;
-            pnlBase.Radius = SmartTheme.RadiusLarge;
-            pnlBase.ShadowColor = Color.Black;
-            pnlBase.ShadowDepth = 40;
+            pnlBase.BorderRadius = 16;
+            
+            pnlBase.ShadowDecoration.Enabled = true;
+            pnlBase.ShadowDecoration.Color = Color.Black;
+            pnlBase.ShadowDecoration.Depth = 40;
+            pnlBase.ShadowDecoration.Shadow = new Padding(0, 0, 10, 10);
 
-            // Typography
             lblName.Font = SmartTheme.FontSubheader;
             lblName.ForeColor = SmartTheme.TextPrimary;
+            // Anchor name so it remains aligned when parent resizes
+            lblName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblName.Location = new Point(_pnlIcon.Right + 12, _pnlIcon.Top + 14); // Better vertical alignment
 
             lblDescription.Font = SmartTheme.FontBody;
             lblDescription.ForeColor = SmartTheme.TextSecondary;
-            
+            lblDescription.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblDescription.Location = new Point(20, _pnlIcon.Bottom + 12);
+
             lblSchedule.Font = SmartTheme.FontBody;
             lblSchedule.ForeColor = SmartTheme.TextSecondary;
+            lblSchedule.BackColor = Color.Transparent;
 
             lblActions.Font = SmartTheme.FontBody;
             lblActions.ForeColor = SmartTheme.TextSecondary;
+            lblActions.BackColor = Color.Transparent;
 
             lblLastRun.Font = SmartTheme.FontBody;
-            lblLastRun.ForeColor = SmartTheme.Success; // Default
+            lblLastRun.ForeColor = SmartTheme.TextSecondary;
 
             lblActive.Font = SmartTheme.FontBody;
             lblActive.ForeColor = SmartTheme.TextSecondary;
 
-            // Mini Buttons (Edit/Delete) - Interactive Hover states
+            // Edit / Delete buttons
             btnEdit.FillColor = Color.Transparent;
-            btnEdit.ForeColor = SmartTheme.TextSecondary;
+            btnEdit.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("edit.png", 18);
+            btnEdit.Text = "";
             btnEdit.HoverState.FillColor = SmartTheme.Surface2;
-            btnEdit.HoverState.ForeColor = SmartTheme.TextPrimary;
 
             btnDelete.FillColor = Color.Transparent;
-            btnDelete.ForeColor = SmartTheme.TextSecondary;
-            btnDelete.HoverState.FillColor = SmartTheme.Danger;
-            btnDelete.HoverState.ForeColor = SmartTheme.TextPrimary;
+            btnDelete.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("trash_clean.png", 18);
+            btnDelete.Text = "";
+            btnDelete.HoverState.FillColor = SmartTheme.Surface2;
 
-            // Card Hover Interactivity
-            pnlBase.MouseEnter += PnlBase_MouseEnter;
-            pnlBase.MouseLeave += PnlBase_MouseLeave;
+            // Card hover shadow
+            pnlBase.MouseEnter += (s, e) => { if (!_isRunning) pnlBase.ShadowDecoration.Depth = 80; };
+            pnlBase.MouseLeave += (s, e) => { if (!_isRunning) pnlBase.ShadowDecoration.Depth = 40; };
+            pnlBase.Paint += PnlBase_Paint;
 
-            // Run Button Interaction
             btnRunNow.Click += BtnRunNow_Click;
 
             UpdateStateStyle();
         }
 
-        private void PnlBase_MouseEnter(object sender, EventArgs e)
+        private void PnlBase_Paint(object? sender, PaintEventArgs e)
         {
-            if (!_isRunning)
-                pnlBase.ShadowDepth = 80; // Pop out slightly on hover
-        }
-
-        private void PnlBase_MouseLeave(object sender, EventArgs e)
-        {
-            if (!_isRunning)
-                pnlBase.ShadowDepth = 40; // Return to normal
+            // Manual drawing removed in favor of native Guna2 border properties
         }
 
         private void BtnRunNow_Click(object sender, EventArgs e)
         {
-            // Toggle the running state to demonstrate interactivity visually!
             IsRunning = !IsRunning;
         }
 
+        // ─── State style ──────────────────────────────────────────────────
         private void UpdateStateStyle()
         {
-            // Toggle Switch Visuals
+            // Toggle
             if (_isActive)
             {
                 toggleActive.CheckedState.FillColor = SmartTheme.Primary;
@@ -160,34 +304,102 @@ namespace SmartRoutines.UI.Controls
                 lblActive.ForeColor = SmartTheme.TextSecondary;
             }
 
-            // Running vs Normal State
             if (_isRunning)
             {
-                // Guna2ShadowPanel doesn't have borders, so we use a glowing shadow effect!
-                pnlBase.ShadowColor = SmartTheme.Danger; 
-                pnlBase.ShadowDepth = 150; // Increased shadow depth for "glow"
+                // FIX: use native Guna2 border properties so the red line 
+                // follows the card's 16px rounded corners perfectly.
+                pnlBase.BorderThickness = 2;
+                pnlBase.BorderColor = SmartTheme.Danger;
 
-                btnRunNow.FillColor = SmartTheme.Surface2; // Dark gray body
-                btnRunNow.ForeColor = SmartTheme.Danger; // Red text
-                btnRunNow.HoverState.FillColor = Color.FromArgb(50, 30, 30); // Very dark red hover
-                btnRunNow.Text = "⏹ Stop";
+                pnlBase.ShadowDecoration.Depth = 40;
+                pnlBase.ShadowDecoration.Color = Color.Black;
+                pnlBase.Invalidate(); 
+
+                btnRunNow.FillColor = SmartTheme.Danger;
+                btnRunNow.ForeColor = Color.White;
+                btnRunNow.HoverState.FillColor = Color.FromArgb(220, 38, 38);
+                btnRunNow.Text = "Stop";
+                btnRunNow.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("stop.png", 18);
+                btnRunNow.ImageOffset = new Point(0, 0);
             }
             else
             {
-                pnlBase.ShadowColor = Color.Black; // Normal shadow
-                pnlBase.ShadowDepth = 40;
+                pnlBase.BorderThickness = 0; // Remove red border
+                pnlBase.Invalidate(); 
 
-                btnRunNow.FillColor = SmartTheme.Primary; // Blue primary
-                btnRunNow.ForeColor = SmartTheme.TextPrimary;
-                btnRunNow.HoverState.FillColor = SmartTheme.PrimaryHover; // Lighter blue hover
-                btnRunNow.Text = "▶ Run Now";
+                pnlBase.ShadowDecoration.Color = Color.Black;
+                pnlBase.ShadowDecoration.Depth = 40;
+
+                if (_isActive)
+                {
+                    btnRunNow.FillColor = SmartTheme.Primary;
+                    btnRunNow.ForeColor = SmartTheme.TextPrimary;
+                    btnRunNow.HoverState.FillColor = SmartTheme.PrimaryHover;
+                    btnRunNow.Image = null; // Corrected
+                }
+                else
+                {
+                    btnRunNow.FillColor = SmartTheme.Surface3;
+                    btnRunNow.ForeColor = SmartTheme.TextSecondary;
+                    btnRunNow.HoverState.FillColor = SmartTheme.Surface2;
+                }
+                btnRunNow.Text = "Run Now";
+                btnRunNow.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("play.png", 18);
+                btnRunNow.ImageOffset = new Point(0, 0);
+                btnRunNow.BorderRadius = 20; // High rounding for Figma style
             }
         }
 
         private void toggleActive_CheckedChanged(object sender, EventArgs e)
         {
-            _isActive = toggleActive.Checked;
-            UpdateStateStyle();
+            if (_isActive != toggleActive.Checked)
+            {
+                _isActive = toggleActive.Checked;
+                UpdateStateStyle();
+                StateChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        public void ScaleUI(float factor)
+        {
+            // Only rebuild fonts when the factor actually changes — prevents GDI+ handle leaks
+            if (Math.Abs(factor - _cachedScaleFactor) < 0.01f) return;
+            _cachedScaleFactor = factor;
+
+            _cachedFontSubheader?.Dispose();
+            _cachedFontBody?.Dispose();
+            _cachedFontSubheader = new Font(SmartTheme.FontSubheader.FontFamily,
+                SmartTheme.FontSubheader.Size * factor, SmartTheme.FontSubheader.Style);
+            _cachedFontBody = new Font(SmartTheme.FontBody.FontFamily,
+                SmartTheme.FontBody.Size * factor, SmartTheme.FontBody.Style);
+
+            this.SuspendLayout();
+
+            lblName.Font        = _cachedFontSubheader;
+            lblDescription.Font = _cachedFontBody;
+            lblSchedule.Font    = _cachedFontBody;
+            lblActions.Font     = _cachedFontBody;
+            lblLastRun.Font     = _cachedFontBody;
+            btnRunNow.Font      = _cachedFontBody;
+
+            if (_pnlIcon != null)
+            {
+                int iconSize = (int)(46 * factor);
+                _pnlIcon.Size = new Size(iconSize, iconSize);
+                _pnlIcon.BorderRadius = (int)(14 * factor);
+            }
+            btnRunNow.BorderRadius = (int)(20 * factor);
+
+            this.ResumeLayout(false);
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            _cachedFontSubheader?.Dispose();
+            _cachedFontSubheader = null;
+            _cachedFontBody?.Dispose();
+            _cachedFontBody = null;
+            base.OnHandleDestroyed(e);
         }
     }
 }

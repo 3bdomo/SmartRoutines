@@ -1,19 +1,8 @@
-﻿using SmartRoutines.Core.Enums;
-using SmartRoutines.Core.Models;
 using SmartRoutines.UI.Core.Theme;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace SmartRoutines.UI.Controls
 {
-    public partial class UC_ExecutionHistory : SmartUserControl   
+    public partial class UC_ExecutionHistory : SmartUserControl
     {
         private const int ItemHeight = 286; 
         private const int MaxVisible = 3;   
@@ -23,9 +12,10 @@ namespace SmartRoutines.UI.Controls
             InitializeComponent();
             pnlHeader.BackColor = SmartTheme.Surface2;
             lblTitle.Text = "Execution History";
-            lblTitle.Font = SmartTheme.FontSubheader;
-            lblTitle.ForeColor = SmartTheme.TextPrimary;
-
+            lblTitle.Font = SmartTheme.FontBodyBold;
+            lblTitle.ForeColor = Color.White;
+            pnlHeader.Padding = new Padding(24, 20, 0, 10);
+            
             // ── Content ──
            pnlContent.BackColor = SmartTheme.Surface;
             flowItems.BackColor = SmartTheme.Surface;

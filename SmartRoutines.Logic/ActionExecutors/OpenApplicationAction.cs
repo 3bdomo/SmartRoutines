@@ -1,51 +1,71 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
-using SmartRoutines.Core.Enums;
+using SmartRoutines.Core.Domain.Entities;
+using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.Exceptions;
-using SmartRoutines.Core.Interfaces;
-using SmartRoutines.Core.Models;
+using SmartRoutines.Core.Interfaces.Logic;
 
 namespace SmartRoutines.Logic.ActionExecutors;
 
-public class OpenApplicationAction : IAction
+/// <summary>
+/// Executes application launch actions.
+/// </summary>
+public class LaunchAppExecutor : IAction
 {
-    public ActionType ActionType => ActionType.LaunchApp;
+    /// <inheritdoc />
+    public IReadOnlyCollection<ActionType> SupportedActionTypes { get; } =
+    [
+        ActionType.LaunchApp
+    ];
 
-    public LogStatus Status { get; }
-    public string ErrorMessage { get; }
-
-    public void Execute(ActionEntry entry, ActionContext context)
+    /// <inheritdoc />
+    public async Task ExecuteAsync(ActionEntry entry, ActionContext context, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            var launchRequest = ParseLaunchRequest(entry);
-            var normalizedPath = NormalizePath(launchRequest.ApplicationPath);
-
-            var psi = new ProcessStartInfo
+            if (entry is null)
             {
-                FileName = normalizedPath,
-                Arguments = launchRequest.Arguments,
-                UseShellExecute = true,
-                WorkingDirectory = ResolveWorkingDirectory(normalizedPath)
-            };
-
-            var process = Process.Start(psi);
-            if (process is null)
-            {
-                throw new InvalidOperationException("Process start returned null.");
+                throw new ArgumentNullException(nameof(entry));
             }
+
+            _ = context ?? throw new ArgumentNullException(nameof(context));
+
+            var launchRequest = ParseLaunchRequest(entry);
+            var normalizedTarget = NormalizePath(launchRequest.ApplicationPath);
+
+            await Task.Run(() =>
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = normalizedTarget,
+                    Arguments = launchRequest.Arguments,
+                    UseShellExecute = true,
+                    WorkingDirectory = ResolveWorkingDirectory(normalizedTarget)
+                };
+
+                var process = Process.Start(psi);
+                if (process is null)
+                {
+                    throw new InvalidOperationException("Process start returned null.");
+                }
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
-            throw new ActionFailedException(ActionType, $"Failed to open application: {ex.Message}", ex);
+            var actionType = entry?.Type ?? ActionType.Unknown;
+            var targetLabel = entry?.Arguments ?? "<null>";
+            throw new ActionFailedException(actionType, $"Failed to start target '{targetLabel}': {ex.Message}", ex);
         }
     }
 
-    private static string NormalizePath(string path)
+    private static string NormalizePath(string pathOrUrl)
     {
-        return path.Trim().Trim('"');
+        return pathOrUrl.Trim().Trim('"');
     }
-    
+
     private static LaunchRequest ParseLaunchRequest(ActionEntry entry)
     {
         if (entry is null)
@@ -57,41 +77,52 @@ public class OpenApplicationAction : IAction
         {
             throw new ArgumentException("Action entry type must be LaunchApp.", nameof(entry));
         }
-    
+
         if (string.IsNullOrWhiteSpace(entry.Arguments))
         {
-            throw new ArgumentException("LaunchApp action requires a non-empty argument payload.", nameof(entry));
+            throw new ArgumentException("LaunchApp requires a non-empty argument payload.", nameof(entry));
         }
-    
+
         var payload = entry.Arguments.Trim();
-    
+
         if (!payload.StartsWith("{", StringComparison.Ordinal))
         {
             return new LaunchRequest(payload, string.Empty);
         }
-    
+
         var parsed = JsonSerializer.Deserialize<LaunchRequestPayload>(payload);
-        if (parsed is null || string.IsNullOrWhiteSpace(parsed.ApplicationPath))
+        if (parsed is null)
+        {
+            throw new ArgumentException("LaunchApp JSON payload is invalid.", nameof(entry));
+        }
+
+        if (string.IsNullOrWhiteSpace(parsed.ApplicationPath))
         {
             throw new ArgumentException("LaunchApp JSON payload must contain 'ApplicationPath'.", nameof(entry));
         }
-    
+
         return new LaunchRequest(parsed.ApplicationPath, parsed.Arguments ?? string.Empty);
     }
 
-    private static string ResolveWorkingDirectory(string path)
+    private static string ResolveWorkingDirectory(string target)
     {
-        var directory = Path.GetDirectoryName(path);
+        var directory = Path.GetDirectoryName(target);
         return string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
     }
-    
+
     private sealed record LaunchRequest(string ApplicationPath, string Arguments);
-    
+
     private sealed class LaunchRequestPayload
     {
         public string ApplicationPath { get; init; } = string.Empty;
         public string? Arguments { get; init; }
-        // // Legacy field kept for payload compatibility; ignored by design.
-        // public bool ForceDetached { get; init; }
     }
 }
+
+/// <summary>
+/// Backward-compatible alias for older registrations that still reference OpenApplicationAction.
+/// </summary>
+public sealed class OpenApplicationAction : LaunchAppExecutor
+{
+}
+

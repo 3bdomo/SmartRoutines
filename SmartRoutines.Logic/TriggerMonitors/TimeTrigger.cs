@@ -1,54 +1,53 @@
-using SmartRoutines.Core.Interfaces.Logic;
 using System.Text.Json;
+using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Models;
+using SmartRoutines.Core.Interfaces.Logic;
 
 namespace SmartRoutines.Logic.TriggerMonitors
 {
-    public class TimeTrigger : ITrigger
+    public class TimeTrigger : BaseTrigger<TriggerConfiguration>
     {
-        private TimeSpan _targetTime;
-        private bool _hasTriggeredToday;
+        private DateTime _lastResetDate = DateTime.MinValue;
 
-        public bool IsSatisfied
+        public override string DisplayName => $"Scheduled at {Config?.ScheduledTime:HH:mm}";
+
+        public override bool ShouldFire()
         {
-            get
+            if (!IsEnabled || Config == null) return false;
+
+            // Reset flag for a new day
+            if (DateTime.Today > _lastResetDate)
             {
-                var now = DateTime.Now.TimeOfDay;
-                // If it's the exact minute and we haven't triggered today
-                if (now.Hours == _targetTime.Hours && now.Minutes == _targetTime.Minutes)
-                {
-                    if (!_hasTriggeredToday)
-                    {
-                        _hasTriggeredToday = true;
-                        return true;
-                    }
-                }
-                else
-                {
-                    _hasTriggeredToday = false; // Reset for next day
-                }
-                return false;
+                Reset();
+                _lastResetDate = DateTime.Today;
             }
+
+            if (HasFired) return false;
+
+            var todayFlag = GetCurrentDayFlag();
+
+            // If RepeatDays doesn't contain today's flag, don't fire
+            if (!Config.RepeatDays.HasFlag(todayFlag)) return false;
+
+            var now = DateTime.Now.TimeOfDay;
+            var scheduled = Config.ScheduledTime.TimeOfDay;
+
+            return now >= scheduled;
         }
 
-        public void Dispose()
+        private Core.Domain.Enums.DayOfWeek GetCurrentDayFlag()
         {
-            throw new NotImplementedException();
-        }
-
-        public void Initialize(string configJson)
-        {
-            try
+            return DateTime.Today.DayOfWeek switch
             {
-                var dict = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, string>>(configJson);
-                if (dict != null && dict.TryGetValue("Time", out var timeStr))
-                {
-                    _targetTime = TimeSpan.Parse(timeStr);
-                }
-            }
-            catch
-            {
-                _targetTime = TimeSpan.Zero;
-            }
+                System.DayOfWeek.Monday => Core.Domain.Enums.DayOfWeek.Mon,
+                System.DayOfWeek.Tuesday => Core.Domain.Enums.DayOfWeek.Tue,
+                System.DayOfWeek.Wednesday => Core.Domain.Enums.DayOfWeek.Wed,
+                System.DayOfWeek.Thursday => Core.Domain.Enums.DayOfWeek.Thu,
+                System.DayOfWeek.Friday => Core.Domain.Enums.DayOfWeek.Fri,
+                System.DayOfWeek.Saturday => Core.Domain.Enums.DayOfWeek.Sat,
+                System.DayOfWeek.Sunday => Core.Domain.Enums.DayOfWeek.Sun,
+                _ => Core.Domain.Enums.DayOfWeek.None
+            };
         }
     }
-}
+}

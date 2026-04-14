@@ -1,16 +1,7 @@
-﻿using SmartRoutines.Core.Enums;
+using SmartRoutines.Core.Enums;
 using SmartRoutines.Core.Interfaces.Data;
 using SmartRoutines.Core.Models;
 using SmartRoutines.UI.Core.Theme;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -23,6 +14,13 @@ namespace SmartRoutines.UI.Controls
 
         public UC_LogsPage()
         {
+            this.SetStyle(
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.UserPaint |
+                ControlStyles.OptimizedDoubleBuffer, true);
+            this.DoubleBuffered = true;
+
+            this.SuspendLayout();
             InitializeComponent();
 
             pnlHeader.BackColor = SmartTheme.Surface;

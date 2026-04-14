@@ -38,6 +38,7 @@ namespace SmartRoutines.UI.Controls
             // 
             // pbIcon
             // 
+            this.pbIcon.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.pbIcon.BackColor = System.Drawing.Color.Transparent;
             this.pbIcon.Location = new System.Drawing.Point(150, 16);
             this.pbIcon.Name = "pbIcon";
@@ -73,8 +74,8 @@ namespace SmartRoutines.UI.Controls
             this.BackColor = System.Drawing.Color.Transparent;
             this.Controls.Add(this.pnlCard);
             this.Name = "UC_StatCard";
-            this.Size = new System.Drawing.Size(200, 110);
-            this.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
+            this.Size = new System.Drawing.Size(200, 120);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.pnlCard.ResumeLayout(false);
             this.pnlCard.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbIcon)).EndInit();

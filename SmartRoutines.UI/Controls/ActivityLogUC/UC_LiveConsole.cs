@@ -1,4 +1,4 @@
-﻿using SmartRoutines.UI.Core.Theme;
+using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.Core.Enums;
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ namespace SmartRoutines.UI.Controls
 
             // header
             pnlConsoleHeader.BackColor = SmartTheme.Surface;
-            lblConsoleTitle.Text = "Live Developer Console";
+            lblConsoleTitle.Text = ">_  Live Developer Console"; // Exact Figma Text
             lblConsoleTitle.Font = SmartTheme.FontBodyBold;
             lblConsoleTitle.ForeColor = SmartTheme.TextPrimary;
 
@@ -31,6 +31,20 @@ namespace SmartRoutines.UI.Controls
             pnlRed.FillColor = SmartTheme.Danger;
             pnlYellow.FillColor = SmartTheme.Warning;
             pnlGreen.FillColor = SmartTheme.Success;
+
+            // Anchor circles securely to the Absolute Right tracking Figma's positioning
+            pnlRed.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            pnlYellow.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            pnlGreen.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+
+            // Calculate strict starting positions from right edge boundary bypassing designer
+            int farRight = pnlConsoleHeader.Width - 20;
+            int dotSize = pnlGreen.Width > 0 ? pnlGreen.Width : 12;
+            int midY = (pnlConsoleHeader.Height - dotSize) / 2;
+
+            pnlGreen.Location = new Point(farRight - dotSize, midY);
+            pnlYellow.Location = new Point(pnlGreen.Left - dotSize - 8, midY); // 8px gap
+            pnlRed.Location = new Point(pnlYellow.Left - dotSize - 8, midY);
 
             // terminal / rich text
             richConsole.BackColor = SmartTheme.Background;
@@ -73,7 +87,7 @@ namespace SmartRoutines.UI.Controls
         // public API same as before but keep an overload that doesn't add timestamp
         public void AppendLine(string message, LogStatus status)
         {
-            this.BeginInvoke(new Action(() =>
+            Action appendAction = () =>
             {
                 // timestamp + colored message
                 Color lineColor = status switch
