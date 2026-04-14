@@ -10,7 +10,7 @@ namespace SmartRoutines.UI
         [STAThread]
         static void Main()
         {
-            ApplicationConfiguration.Initialize();
+           ApplicationConfiguration.Initialize();
 
             //var mainForm = new Form();
             //mainForm.Controls.Add(new UC_ActionsMain());

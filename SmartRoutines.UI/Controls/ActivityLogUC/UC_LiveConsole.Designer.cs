@@ -51,9 +51,11 @@
             // richConsole
             // 
             _transition.SetDecoration(richConsole, Guna.UI2.AnimatorNS.DecorationType.None);
-            richConsole.Location = new Point(0, 105);
+            richConsole.Dock = DockStyle.Fill;
+            richConsole.Location = new Point(0, 0);
+            richConsole.Margin = new Padding(4);
             richConsole.Name = "richConsole";
-            richConsole.Size = new Size(850, 252);
+            richConsole.Size = new Size(2295, 632);
             richConsole.TabIndex = 0;
             richConsole.Text = "";
             richConsole.TextChanged += richConsole_TextChanged;
@@ -66,21 +68,24 @@
             pnlConsoleHeader.Controls.Add(lblConsoleTitle);
             pnlConsoleHeader.CustomizableEdges = customizableEdges4;
             _transition.SetDecoration(pnlConsoleHeader, Guna.UI2.AnimatorNS.DecorationType.None);
-            pnlConsoleHeader.Location = new Point(0, 2);
+            pnlConsoleHeader.Dock = DockStyle.Top;
+            pnlConsoleHeader.Location = new Point(0, 0);
+            pnlConsoleHeader.Margin = new Padding(4);
             pnlConsoleHeader.Name = "pnlConsoleHeader";
             pnlConsoleHeader.ShadowDecoration.CustomizableEdges = customizableEdges5;
-            pnlConsoleHeader.Size = new Size(850, 100);
+            pnlConsoleHeader.Size = new Size(2295, 150);
             pnlConsoleHeader.TabIndex = 1;
             // 
             // pnlGreen
             // 
             _transition.SetDecoration(pnlGreen, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlGreen.ImageRotate = 0F;
-            pnlGreen.Location = new Point(790, 35);
+            pnlGreen.Location = new Point(2143, 42);
+            pnlGreen.Margin = new Padding(4);
             pnlGreen.Name = "pnlGreen";
             pnlGreen.ShadowDecoration.CustomizableEdges = customizableEdges1;
             pnlGreen.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
-            pnlGreen.Size = new Size(20, 20);
+            pnlGreen.Size = new Size(50, 50);
             pnlGreen.TabIndex = 8;
             pnlGreen.TabStop = false;
             // 
@@ -88,11 +93,12 @@
             // 
             _transition.SetDecoration(pnlYellow, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlYellow.ImageRotate = 0F;
-            pnlYellow.Location = new Point(760, 35);
+            pnlYellow.Location = new Point(2214, 42);
+            pnlYellow.Margin = new Padding(4);
             pnlYellow.Name = "pnlYellow";
             pnlYellow.ShadowDecoration.CustomizableEdges = customizableEdges2;
             pnlYellow.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
-            pnlYellow.Size = new Size(20, 20);
+            pnlYellow.Size = new Size(50, 50);
             pnlYellow.TabIndex = 7;
             pnlYellow.TabStop = false;
             // 
@@ -100,19 +106,22 @@
             // 
             _transition.SetDecoration(pnlRed, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlRed.ImageRotate = 0F;
-            pnlRed.Location = new Point(730, 35);
+            pnlRed.Location = new Point(2067, 42);
+            pnlRed.Margin = new Padding(4);
             pnlRed.Name = "pnlRed";
             pnlRed.ShadowDecoration.CustomizableEdges = customizableEdges3;
             pnlRed.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
-            pnlRed.Size = new Size(20, 20);
+            pnlRed.Size = new Size(50, 50);
             pnlRed.TabIndex = 6;
             pnlRed.TabStop = false;
+            pnlRed.Click += pnlRed_Click;
             // 
             // lblConsoleTitle
             // 
             lblConsoleTitle.BackColor = Color.Transparent;
             _transition.SetDecoration(lblConsoleTitle, Guna.UI2.AnimatorNS.DecorationType.None);
-            lblConsoleTitle.Location = new Point(24, 23);
+            lblConsoleTitle.Location = new Point(25, 42);
+            lblConsoleTitle.Margin = new Padding(4);
             lblConsoleTitle.Name = "lblConsoleTitle";
             lblConsoleTitle.Size = new Size(236, 43);
             lblConsoleTitle.TabIndex = 2;
@@ -127,28 +136,30 @@
             txtCommand.DisabledState.FillColor = Color.FromArgb(226, 226, 226);
             txtCommand.DisabledState.ForeColor = Color.FromArgb(138, 138, 138);
             txtCommand.DisabledState.PlaceholderForeColor = Color.FromArgb(138, 138, 138);
+            txtCommand.Dock = DockStyle.Bottom;
             txtCommand.FocusedState.BorderColor = Color.FromArgb(94, 148, 255);
             txtCommand.Font = new Font("Segoe UI", 9F);
             txtCommand.HoverState.BorderColor = Color.FromArgb(94, 148, 255);
-            txtCommand.Location = new Point(0, 357);
-            txtCommand.Margin = new Padding(7, 8, 7, 8);
+            txtCommand.Location = new Point(0, 582);
+            txtCommand.Margin = new Padding(9, 11, 9, 11);
             txtCommand.Name = "txtCommand";
             txtCommand.PlaceholderText = "";
             txtCommand.SelectedText = "";
             txtCommand.ShadowDecoration.CustomizableEdges = customizableEdges7;
-            txtCommand.Size = new Size(850, 115);
+            txtCommand.Size = new Size(2295, 50);
             txtCommand.TabIndex = 6;
             // 
             // UC_LiveConsole
             // 
-            AutoScaleDimensions = new SizeF(17F, 41F);
+            AutoScaleDimensions = new SizeF(22F, 54F);
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(txtCommand);
             Controls.Add(pnlConsoleHeader);
             Controls.Add(richConsole);
             _transition.SetDecoration(this, Guna.UI2.AnimatorNS.DecorationType.None);
+            Margin = new Padding(0);
             Name = "UC_LiveConsole";
-            Size = new Size(850, 480);
+            Size = new Size(2295, 632);
             pnlConsoleHeader.ResumeLayout(false);
             pnlConsoleHeader.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pnlGreen).EndInit();

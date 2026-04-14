@@ -30,10 +30,10 @@ namespace SmartRoutines.UI.Controls
         /// </summary>
         private void InitializeComponent()
         {
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges5 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges6 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges7 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges8 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges1 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges2 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges3 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges4 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             RoutenNameLab = new Guna.UI2.WinForms.Guna2HtmlLabel();
             lblDetails = new Guna.UI2.WinForms.Guna2HtmlLabel();
             lblTime = new Guna.UI2.WinForms.Guna2HtmlLabel();
@@ -50,7 +50,8 @@ namespace SmartRoutines.UI.Controls
             // 
             RoutenNameLab.BackColor = Color.Transparent;
             _transition.SetDecoration(RoutenNameLab, Guna.UI2.AnimatorNS.DecorationType.None);
-            RoutenNameLab.Location = new Point(524, 37);
+            RoutenNameLab.Location = new Point(300, 33);
+            RoutenNameLab.Margin = new Padding(4);
             RoutenNameLab.Name = "RoutenNameLab";
             RoutenNameLab.Size = new Size(236, 43);
             RoutenNameLab.TabIndex = 1;
@@ -61,17 +62,20 @@ namespace SmartRoutines.UI.Controls
             // 
             lblDetails.BackColor = Color.Transparent;
             _transition.SetDecoration(lblDetails, Guna.UI2.AnimatorNS.DecorationType.None);
-            lblDetails.Location = new Point(524, 122);
+            lblDetails.Location = new Point(300, 118);
+            lblDetails.Margin = new Padding(4);
             lblDetails.Name = "lblDetails";
             lblDetails.Size = new Size(236, 43);
             lblDetails.TabIndex = 2;
             lblDetails.Text = "guna2HtmlLabel1";
+            lblDetails.Click += lblDetails_Click;
             // 
             // lblTime
             // 
             lblTime.BackColor = Color.Transparent;
             _transition.SetDecoration(lblTime, Guna.UI2.AnimatorNS.DecorationType.None);
-            lblTime.Location = new Point(2085, 154);
+            lblTime.Location = new Point(2000, 40);
+            lblTime.Margin = new Padding(4);
             lblTime.Name = "lblTime";
             lblTime.Size = new Size(236, 43);
             lblTime.TabIndex = 3;
@@ -83,39 +87,43 @@ namespace SmartRoutines.UI.Controls
             pnlIcon.BorderRadius = 70;
             pnlIcon.BorderStyle = System.Drawing.Drawing2D.DashStyle.Dot;
             pnlIcon.Controls.Add(picStatus);
-            pnlIcon.CustomizableEdges = customizableEdges5;
+            pnlIcon.CustomizableEdges = customizableEdges1;
             _transition.SetDecoration(pnlIcon, Guna.UI2.AnimatorNS.DecorationType.None);
-            pnlIcon.Location = new Point(5, 37);
+            pnlIcon.Location = new Point(14, 17);
+            pnlIcon.Margin = new Padding(4);
             pnlIcon.Name = "pnlIcon";
-            pnlIcon.ShadowDecoration.CustomizableEdges = customizableEdges6;
-            pnlIcon.Size = new Size(280, 212);
+            pnlIcon.ShadowDecoration.CustomizableEdges = customizableEdges2;
+            pnlIcon.Size = new Size(200, 200);
             pnlIcon.TabIndex = 4;
             // 
             // picStatus
             // 
             _transition.SetDecoration(picStatus, Guna.UI2.AnimatorNS.DecorationType.None);
-            picStatus.Location = new Point(24, 31);
+            picStatus.Location = new Point(37, 16);
+            picStatus.Margin = new Padding(4);
             picStatus.Name = "picStatus";
-            picStatus.Size = new Size(227, 156);
+            picStatus.Size = new Size(100, 100);
             picStatus.TabIndex = 0;
             picStatus.TabStop = false;
             // 
             // pnlSummary
             // 
             pnlSummary.Controls.Add(lblSummaryText);
-            pnlSummary.CustomizableEdges = customizableEdges7;
+            pnlSummary.CustomizableEdges = customizableEdges3;
             _transition.SetDecoration(pnlSummary, Guna.UI2.AnimatorNS.DecorationType.None);
-            pnlSummary.Location = new Point(524, 278);
+            pnlSummary.Location = new Point(467, 195);
+            pnlSummary.Margin = new Padding(4);
             pnlSummary.Name = "pnlSummary";
-            pnlSummary.ShadowDecoration.CustomizableEdges = customizableEdges8;
-            pnlSummary.Size = new Size(600, 50);
+            pnlSummary.ShadowDecoration.CustomizableEdges = customizableEdges4;
+            pnlSummary.Size = new Size(776, 66);
             pnlSummary.TabIndex = 5;
             // 
             // lblSummaryText
             // 
             lblSummaryText.BackColor = Color.Transparent;
             _transition.SetDecoration(lblSummaryText, Guna.UI2.AnimatorNS.DecorationType.None);
-            lblSummaryText.Location = new Point(11, 7);
+            lblSummaryText.Location = new Point(14, 9);
+            lblSummaryText.Margin = new Padding(4);
             lblSummaryText.Name = "lblSummaryText";
             lblSummaryText.Size = new Size(236, 43);
             lblSummaryText.TabIndex = 0;
@@ -123,17 +131,17 @@ namespace SmartRoutines.UI.Controls
             // 
             // UC_LogItem
             // 
-            AutoScaleDimensions = new SizeF(17F, 41F);
+            AutoScaleDimensions = new SizeF(22F, 54F);
             AutoScaleMode = AutoScaleMode.Font;
-            AutoScroll = true;
             Controls.Add(pnlSummary);
             Controls.Add(pnlIcon);
             Controls.Add(lblTime);
             Controls.Add(lblDetails);
             Controls.Add(RoutenNameLab);
             _transition.SetDecoration(this, Guna.UI2.AnimatorNS.DecorationType.None);
+            Margin = new Padding(0);
             Name = "UC_LogItem";
-            Size = new Size(2349, 388);
+            Size = new Size(2350, 286);
             pnlIcon.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)picStatus).EndInit();
             pnlSummary.ResumeLayout(false);

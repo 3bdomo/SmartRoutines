@@ -43,9 +43,9 @@ namespace SmartRoutines.UI.Controls
             txtCommand.ForeColor = SmartTheme.Success;
             txtCommand.Font = SmartTheme.FontMono;
             txtCommand.BorderRadius = 0;
-             txtCommand.BorderColor = SmartTheme.Border;
+            txtCommand.BorderColor = SmartTheme.Border;
             //txtCommand.BorderColor = SmartTheme.Border;
-            
+
 
         }
         public void AppendLine(string message, LogStatus status)
@@ -67,8 +67,13 @@ namespace SmartRoutines.UI.Controls
                 richConsole.ScrollToCaret();
             }));
         }
-       
+
         private void richConsole_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pnlRed_Click(object sender, EventArgs e)
         {
 
         }

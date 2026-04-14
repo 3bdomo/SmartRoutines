@@ -25,11 +25,11 @@ namespace SmartRoutines.UI.Controls
         public UC_LogItem(ActivityLog log) : this()
         {
 
-           
+
             RoutenNameLab.Text = log.RoutineName;
             lblDetails.Text = log.Message;
             lblTime.Text = log.CreatedAt.ToString("h:mm:ss tt");
-           // lblSummaryText.Text = log.Message; // جوا الـ pnlSummary
+            lblSummaryText.Text = log.Message; // جوا الـ pnlSummary
 
             // ── الخطوط ──
             RoutenNameLab.Font = SmartTheme.FontBodyBold;
@@ -44,7 +44,7 @@ namespace SmartRoutines.UI.Controls
 
             // ── Guna2CirclePictureBox ──
 
-            picStatus.Size = new Size(38, 38);
+            picStatus.Size = new Size(50, 50);
             picStatus.SizeMode = PictureBoxSizeMode.Zoom;
             picStatus.Padding = new Padding(8);
 
@@ -76,15 +76,15 @@ namespace SmartRoutines.UI.Controls
 
 
             // ── Summary Panel ──
-            pnlSummary.BackColor = SmartTheme.Surface3;
-            pnlSummary.BorderRadius = 6;
-            lblSummaryText.Text = log.Message;
-            lblSummaryText.Font = SmartTheme.FontMono;
-            lblSummaryText.ForeColor = SmartTheme.TextSecondary;
+            //pnlSummary.BackColor = SmartTheme.Surface;
+            //pnlSummary.BorderRadius = 10;
+            //lblSummaryText.Text = log.Message;
+            //lblSummaryText.Font = SmartTheme.FontMono;
+            //lblSummaryText.ForeColor = SmartTheme.TextSecondary;
 
             // ── Hover ──
-            this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface2;
-            this.MouseLeave += (s, e) => this.BackColor = SmartTheme.Surface;
+            this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface;
+            this.MouseLeave += (s, e) => this.BackColor = SmartTheme.Surface2;
 
             TooltipHelper.Set(this,
             $"<b>{log.RoutineName}</b><br>{log.Message}");
@@ -94,6 +94,11 @@ namespace SmartRoutines.UI.Controls
         private void RoutenNameLab_Click(object sender, EventArgs e)
         {
             //SmartTheme.FontBodyBold;
+        }
+
+        private void lblDetails_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
