@@ -105,11 +105,11 @@ namespace SmartRoutines.UI.Forms
             pnlHeader.Controls.Add(lblAppTitle);
             pnlHeader.CustomizableEdges = customizableEdges9;
             pnlHeader.Dock = DockStyle.Top;
-            pnlHeader.Location = new Point(274, 0);
+            pnlHeader.Location = new Point(310, 0);
             pnlHeader.Margin = new Padding(3, 4, 3, 4);
             pnlHeader.Name = "pnlHeader";
             pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges10;
-            pnlHeader.Size = new Size(1189, 60);
+            pnlHeader.Size = new Size(1153, 60);
             pnlHeader.TabIndex = 0;
             // 
             // btnSidebarCollapse
@@ -197,7 +197,7 @@ namespace SmartRoutines.UI.Forms
             pnlSidebar.Margin = new Padding(3, 4, 3, 4);
             pnlSidebar.Name = "pnlSidebar";
             pnlSidebar.ShadowDecoration.CustomizableEdges = customizableEdges25;
-            pnlSidebar.Size = new Size(274, 960);
+            pnlSidebar.Size = new Size(310, 960);
             pnlSidebar.TabIndex = 1;
             // 
             // pnlSidebarNav
@@ -374,11 +374,11 @@ namespace SmartRoutines.UI.Forms
             // 
             pnlMainContent.CustomizableEdges = customizableEdges1;
             pnlMainContent.Dock = DockStyle.Fill;
-            pnlMainContent.Location = new Point(274, 60);
+            pnlMainContent.Location = new Point(310, 60);
             pnlMainContent.Margin = new Padding(3, 4, 3, 4);
             pnlMainContent.Name = "pnlMainContent";
             pnlMainContent.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            pnlMainContent.Size = new Size(1189, 900);
+            pnlMainContent.Size = new Size(1153, 900);
             pnlMainContent.TabIndex = 2;
             // 
             // FrmMain

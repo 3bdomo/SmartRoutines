@@ -2,6 +2,9 @@ using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.UI.Core.Tray;
 using System.Reflection;
+using SmartRoutines.UI.Controls.Common;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SmartRoutines.UI.Forms
 {
@@ -9,7 +12,7 @@ namespace SmartRoutines.UI.Forms
     {
         private Guna2Button? _activeNavButton;
         private bool _sidebarCollapsed = false;
-        private const int SidebarExpandedWidth = 220;
+        private const int SidebarExpandedWidth = 310;
         private const int SidebarCollapsedWidth = 60;
 
         // --- System Tray ---
@@ -33,8 +36,13 @@ namespace SmartRoutines.UI.Forms
         // Page caching to eliminate 5-10s load times
         private readonly System.Collections.Generic.Dictionary<Type, UserControl> _pageCache = new();
 
-        public FrmMain()
+        private readonly IServiceProvider _serviceProvider;
+        // Only reload dashboard data after a routine is saved — not on every navigation
+        private bool _dashboardNeedsRefresh = true;
+
+        public FrmMain(IServiceProvider serviceProvider)
         {
+            _serviceProvider = serviceProvider;
             InitializeComponent();
             
             // Performance: High quality rendering styles
@@ -234,7 +242,7 @@ namespace SmartRoutines.UI.Forms
         // ─── Page Navigation ───────────────────────────────────────────────
         private UserControl? _currentPage;
 
-        public void DisplayPage<T>() where T : UserControl, new()
+        public void DisplayPage<T>() where T : UserControl
         {
             Type pageType = typeof(T);
             
@@ -244,16 +252,9 @@ namespace SmartRoutines.UI.Forms
                 _currentPage.Visible = false;
             }
 
-            // 2. Get or create page from cache
-            if (!_pageCache.TryGetValue(pageType, out var page))
-            {
-                page = new T();
-                page.Dock = DockStyle.Fill;
-                pnlMainContent.Controls.Add(page);
-                _pageCache[pageType] = page;
-            }
+            // 2. Get or create page (handles caching and DI)
+            _currentPage = GetPage<T>();
 
-            _currentPage = page;
             _currentPage.Visible = true;
             _currentPage.BringToFront();
             
@@ -261,7 +262,47 @@ namespace SmartRoutines.UI.Forms
             if (_currentPage is Controls.UC_Dashboard dashboard)
             {
                 dashboard.AdjustCardWidths();
+                // Only reload data if a new routine was saved — preserves IsRunning state
+                if (_dashboardNeedsRefresh)
+                {
+                    _dashboardNeedsRefresh = false;
+                    _ = dashboard.ReloadDataAsync();
+                }
             }
+        }
+
+        public T GetPage<T>() where T : UserControl
+        {
+            Type pageType = typeof(T);
+            if (!_pageCache.TryGetValue(pageType, out var page))
+            {
+                page = _serviceProvider.GetRequiredService<T>();
+                page.Dock = DockStyle.Fill;
+                pnlMainContent.Controls.Add(page);
+                _pageCache[pageType] = page;
+                page.Visible = false;
+            }
+            return (T)page;
+        }
+
+        /// <summary>
+        /// Called by the wizard after saving a routine to trigger a fresh dashboard load.
+        /// </summary>
+        public void RequestDashboardRefresh() => _dashboardNeedsRefresh = true;
+
+        public void ShowToast(string message)
+        {
+            var toast = new UC_Toast(message);
+            this.Controls.Add(toast);
+            
+            // Position: Top-Right
+            int margin = 20;
+            toast.Location = new Point(
+                this.Width - toast.Width - margin,
+                margin + 40 // Offset for the thin title bar
+            );
+            
+            toast.BringToFront();
         }
 
         private void SetActiveNavButton(Guna2Button btn)
@@ -684,7 +725,8 @@ namespace SmartRoutines.UI.Forms
             btn.Text = symbol;
             btn.FillColor = Color.Transparent;
             btn.ForeColor = fg;
-            btn.Font = SmartTheme.FontBody;
+            // Use a larger, symbol-friendly font so ✕ □ ─ render visibly
+            btn.Font = new Font("Segoe UI", 13f, FontStyle.Regular);
             btn.BorderRadius = 4;
             btn.Animated = true;
             btn.HoverState.FillColor = SmartTheme.Surface2;

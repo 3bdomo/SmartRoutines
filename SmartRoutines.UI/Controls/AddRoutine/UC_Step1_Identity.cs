@@ -2,7 +2,7 @@
 
 using SmartRoutines.UI.Core.Theme;
 
-namespace Project_2.UI.Steps;
+namespace SmartRoutines.UI.Controls.AddRoutine;
 
 public class UC_Step1_Identity : SmartUserControl
 {
@@ -30,6 +30,18 @@ public class UC_Step1_Identity : SmartUserControl
 	public UC_Step1_Identity()
 	{
 		InitializeComponents();
+	}
+
+	public bool ValidateIdentity()
+	{
+		if (string.IsNullOrWhiteSpace(RoutineName))
+		{
+			_lblNameError.Visible = true;
+			_txtRoutineName.Focus();
+			return false;
+		}
+		_lblNameError.Visible = false;
+		return true;
 	}
 
 	private void InitializeComponents()

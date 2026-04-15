@@ -1,4 +1,4 @@
-﻿using SmartRoutines.UI.Core.Theme;
+using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -30,31 +30,44 @@ namespace SmartRoutines.UI.Controls
         /// </summary>
         private void InitializeComponent()
         {
-            pipelineActions = new SmartRoutines.UI.Controls.Step3.UC_Step3_Actions();
-            SuspendLayout();
+            this.pnlStepper = new System.Windows.Forms.Panel();
+            this.pnlContent = new System.Windows.Forms.Panel();
+            this.pnlFooter = new System.Windows.Forms.Panel();
+            this.SuspendLayout();
             // 
-            // pipelineActions
+            // pnlStepper
             // 
-            pipelineActions.BackColor = SmartTheme.Background;//System.Drawing.Color.FromArgb(((int)((byte)18)), ((int)((byte)18)), ((int)((byte)18)));
-            pipelineActions.Dock = System.Windows.Forms.DockStyle.Fill;
-            pipelineActions.Font = new System.Drawing.Font("Segoe UI", 9F);
-            pipelineActions.ForeColor =SmartTheme.Primary ;// System.Drawing.Color.FromArgb(((int)((byte)255)), ((int)((byte)255)), ((int)((byte)255)));
-            pipelineActions.Location = new System.Drawing.Point(0, 0);
-            pipelineActions.Name = "pipelineActions";
-            pipelineActions.Size = new System.Drawing.Size(808, 426);
-            pipelineActions.TabIndex = 0;
+            this.pnlStepper.Dock = System.Windows.Forms.DockStyle.Top;
+            this.pnlStepper.Height = 80;
+            this.pnlStepper.Name = "pnlStepper";
             // 
-            // UC_AciotnsMain
+            // pnlContent
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            Controls.Add(pipelineActions);
-            Size = new System.Drawing.Size(808, 426);
-            ResumeLayout(false);
+            this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlContent.Name = "pnlContent";
+            // 
+            // pnlFooter
+            // 
+            this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.pnlFooter.Height = 70;
+            this.pnlFooter.Name = "pnlFooter";
+            // 
+            // UC_ActionsMain
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.pnlContent);
+            this.Controls.Add(this.pnlStepper);
+            this.Controls.Add(this.pnlFooter);
+            this.Name = "UC_ActionsMain";
+            this.Size = new System.Drawing.Size(900, 600);
+            this.ResumeLayout(false);
         }
 
         #endregion
 
-        private SmartRoutines.UI.Controls.Step3.UC_Step3_Actions pipelineActions;
+        private System.Windows.Forms.Panel pnlStepper;
+        private System.Windows.Forms.Panel pnlContent;
+        private System.Windows.Forms.Panel pnlFooter;
     }
 }

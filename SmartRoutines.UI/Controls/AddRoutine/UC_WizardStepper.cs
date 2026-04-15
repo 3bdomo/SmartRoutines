@@ -3,7 +3,7 @@ using SmartRoutines.UI.Core.Theme;
 
 
 
-namespace Project_2.UI.Controls;
+namespace SmartRoutines.UI.Controls.AddRoutine;
 
 /// <summary>
 /// Wizard stepper control showing 3 steps with progress indicators.

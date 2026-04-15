@@ -28,6 +28,7 @@ public class RoutineService : IRoutineService
         {
             Id = r.Id,
             Name = r.Name,
+            Description = r.Description,
             IconPath = r.IconPath,
             TriggerSummary = r.TriggerType.ToString(),
             ActionCount = r.Actions.Count,
@@ -66,73 +67,57 @@ public class RoutineService : IRoutineService
         if (!await _uow.Routines.IsNameUniqueAsync(dto.Name, dto.Id))
             throw new DuplicateRoutineNameException(dto.Name);
 
-        // Start transaction
-        await _uow.BeginTransactionAsync();
-        try
+        Routine? entity = null;
+        if (dto.Id.HasValue)
         {
-            Routine? entity = null;
-            if (dto.Id.HasValue)
+            entity = await _uow.Routines.GetByIdAsync(dto.Id.Value);
+            if (entity == null)
+                throw new RoutineNotFoundException(dto.Id.Value);
+            // update fields
+            entity.UpdateDetails(dto.Name, dto.Description, dto.IconPath ?? string.Empty);
+        }
+        else
+        {
+            entity = new Routine(dto.Name, dto.Description ?? string.Empty, dto.IconPath ?? string.Empty, dto.TriggerType, dto.TriggerConfig);
+            await _uow.Routines.AddAsync(entity);
+        }
+
+        // Sync actions: existing vs dto
+        // Build maps
+        var existingActions = entity.Actions.ToDictionary(a => a.Id);
+        var dtoByOrder = dto.Actions.OrderBy(a => a.ExecutionOrder).ToList();
+
+        // Remove actions not present
+        foreach (var existing in existingActions.Values)
+        {
+            if (!dtoByOrder.Any(d => d.ExecutionOrder == existing.ExecutionOrder))
             {
-                entity = await _uow.Routines.GetByIdAsync(dto.Id.Value);
-                if (entity == null)
-                    throw new RoutineNotFoundException(dto.Id.Value);
-                // update fields
-                entity.UpdateDetails(dto.Name, dto.Description, dto.IconPath ?? string.Empty);
+                entity.RemoveAction(existing);
+            }
+        }
+
+        // Add or update
+        foreach (var adto in dtoByOrder)
+        {
+            var match = entity.Actions.FirstOrDefault(a => a.ExecutionOrder == adto.ExecutionOrder);
+            if (match != null)
+            {
+                // update via replace: here domain probably has methods; using UpdateDetails on routine to persist changes
+                match = new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder);
+                // can't directly replace in EF tracked collection so remove and add
+                entity.RemoveAction(entity.Actions.First(a => a.ExecutionOrder == adto.ExecutionOrder));
+                entity.AddAction(match);
             }
             else
             {
-                entity = new Routine(dto.Name, dto.Description ?? string.Empty, dto.IconPath ?? string.Empty, dto.TriggerType, dto.TriggerConfig);
-                await _uow.Routines.AddAsync(entity);
+                entity.AddAction(new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder));
             }
-
-            // Sync actions: existing vs dto
-            // Build maps
-            var existingActions = entity.Actions.ToDictionary(a => a.Id);
-            var dtoByOrder = dto.Actions.OrderBy(a => a.ExecutionOrder).ToList();
-
-            // Remove actions not present
-            foreach (var existing in existingActions.Values)
-            {
-                if (!dtoByOrder.Any(d => d.ExecutionOrder == existing.ExecutionOrder))
-                {
-                    entity.RemoveAction(existing);
-                }
-            }
-
-            // Add or update
-            foreach (var adto in dtoByOrder)
-            {
-                var match = entity.Actions.FirstOrDefault(a => a.ExecutionOrder == adto.ExecutionOrder);
-                if (match != null)
-                {
-                    // update via replace: here domain probably has methods; using UpdateDetails on routine to persist changes
-                    match = new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder);
-                    // can't directly replace in EF tracked collection so remove and add
-                    entity.RemoveAction(entity.Actions.First(a => a.ExecutionOrder == adto.ExecutionOrder));
-                    entity.AddAction(match);
-                }
-                else
-                {
-                    entity.AddAction(new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder));
-                }
-            }
-
-            // Persist
-            await _uow.SaveChangesAsync();
-            await _uow.CommitTransactionAsync();
-
-            return entity.Id;
         }
-        catch (JsonException jex)
-        {
-            await _uow.RollbackTransactionAsync();
-            throw new TriggerInitializationException("Trigger configuration JSON invalid.", jex);
-        }
-        catch
-        {
-            await _uow.RollbackTransactionAsync();
-            throw;
-        }
+
+        // Persist
+        await _uow.SaveChangesAsync();
+
+        return entity.Id;
     }
 
     /// <inheritdoc />
