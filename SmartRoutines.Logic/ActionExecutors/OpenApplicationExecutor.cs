@@ -1,4 +1,3 @@
-﻿using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.Exceptions;
@@ -11,6 +10,12 @@ namespace SmartRoutines.Logic.ActionExecutors;
 /// <summary>
 /// Executes application launch actions.
 /// </summary>
+/// <remarks>
+/// <see cref="Process.Start"/> returns immediately after handing the launch to the OS shell;
+/// it does not block for the process to exit. This executor is therefore effectively
+/// synchronous and returns <see cref="Task.CompletedTask"/>. The <c>ActionRunner</c>
+/// is responsible for dispatching all executors on a thread-pool thread.
+/// </remarks>
 public class LaunchAppExecutor : IAction
 {
     /// <inheritdoc />
@@ -20,86 +25,65 @@ public class LaunchAppExecutor : IAction
     ];
 
     /// <inheritdoc />
-    public async Task ExecuteAsync(ActionEntry entry, ActionContext context, CancellationToken cancellationToken = default)
+    public Task ExecuteAsync(RuntimeAction action, ActionContext context, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        ArgumentNullException.ThrowIfNull(action);
+        ArgumentNullException.ThrowIfNull(context);
+
         try
         {
-            if (entry is null)
-            {
-                throw new ArgumentNullException(nameof(entry));
-            }
-
-            _ = context ?? throw new ArgumentNullException(nameof(context));
-
-            var launchRequest = ParseLaunchRequest(entry);
+            var launchRequest = ParseLaunchRequest(action);
             var normalizedTarget = NormalizePath(launchRequest.ApplicationPath);
 
-            await Task.Run(() =>
+            var psi = new ProcessStartInfo
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = normalizedTarget,
-                    Arguments = launchRequest.Arguments,
-                    UseShellExecute = true,
-                    WorkingDirectory = ResolveWorkingDirectory(normalizedTarget)
-                };
+                FileName = normalizedTarget,
+                Arguments = launchRequest.Arguments,
+                UseShellExecute = true,
+                WorkingDirectory = ResolveWorkingDirectory(normalizedTarget)
+            };
 
-                var process = Process.Start(psi);
-                if (process is null)
-                {
-                    throw new InvalidOperationException("Process start returned null.");
-                }
-            }, cancellationToken);
+            var process = Process.Start(psi);
+            if (process is null)
+                throw new InvalidOperationException("Process.Start returned null — the OS could not launch the target.");
         }
         catch (Exception ex)
         {
-            var actionType = entry?.Type ?? ActionType.Unknown;
-            var targetLabel = entry?.Arguments ?? "<null>";
-            throw new ActionFailedException(actionType, $"Failed to start target '{targetLabel}': {ex.Message}", ex);
+            throw new ActionFailedException(
+                action.Type,
+                $"Failed to start target '{action.Arguments}': {ex.Message}",
+                ex);
         }
+
+        return Task.CompletedTask;
     }
 
-    private static string NormalizePath(string pathOrUrl)
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private static string NormalizePath(string pathOrUrl) => pathOrUrl.Trim().Trim('"');
+
+    private static LaunchRequest ParseLaunchRequest(RuntimeAction action)
     {
-        return pathOrUrl.Trim().Trim('"');
-    }
+        if (action.Type != ActionType.LaunchApp)
+            throw new ArgumentException("Action type must be LaunchApp.", nameof(action));
 
-    private static LaunchRequest ParseLaunchRequest(ActionEntry entry)
-    {
-        if (entry is null)
-        {
-            throw new ArgumentNullException(nameof(entry));
-        }
+        if (string.IsNullOrWhiteSpace(action.Arguments))
+            throw new ArgumentException("LaunchApp requires a non-empty argument payload.", nameof(action));
 
-        if (entry.Type != ActionType.LaunchApp)
-        {
-            throw new ArgumentException("Action entry type must be LaunchApp.", nameof(entry));
-        }
+        var payload = action.Arguments.Trim();
 
-        if (string.IsNullOrWhiteSpace(entry.Arguments))
-        {
-            throw new ArgumentException("LaunchApp requires a non-empty argument payload.", nameof(entry));
-        }
-
-        var payload = entry.Arguments.Trim();
-
+        // Plain path — no JSON wrapper
         if (!payload.StartsWith("{", StringComparison.Ordinal))
-        {
             return new LaunchRequest(payload, string.Empty);
-        }
 
         var parsed = JsonSerializer.Deserialize<LaunchRequestPayload>(payload);
-        if (parsed is null)
-        {
-            throw new ArgumentException("LaunchApp JSON payload is invalid.", nameof(entry));
-        }
 
-        if (string.IsNullOrWhiteSpace(parsed.ApplicationPath))
-        {
-            throw new ArgumentException("LaunchApp JSON payload must contain 'ApplicationPath'.", nameof(entry));
-        }
+        if (parsed is null || string.IsNullOrWhiteSpace(parsed.ApplicationPath))
+            throw new ArgumentException(
+                "LaunchApp JSON payload must contain a non-empty 'ApplicationPath'.",
+                nameof(action));
 
         return new LaunchRequest(parsed.ApplicationPath, parsed.Arguments ?? string.Empty);
     }
@@ -109,6 +93,8 @@ public class LaunchAppExecutor : IAction
         var directory = Path.GetDirectoryName(target);
         return string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
     }
+
+    // ── Private records ──────────────────────────────────────────────────────
 
     private sealed record LaunchRequest(string ApplicationPath, string Arguments);
 
@@ -120,9 +106,6 @@ public class LaunchAppExecutor : IAction
 }
 
 /// <summary>
-/// Backward-compatible alias for older registrations that still reference OpenApplicationAction.
+/// Backward-compatible alias for older registrations that still reference OpenApplicationExecutor.
 /// </summary>
-public sealed class OpenApplicationExecutor : LaunchAppExecutor
-{
-}
-
+public sealed class OpenApplicationExecutor : LaunchAppExecutor { }
