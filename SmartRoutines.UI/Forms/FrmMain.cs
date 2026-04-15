@@ -5,6 +5,7 @@ using System.Reflection;
 using SmartRoutines.UI.Controls.Common;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI.Forms
 {
@@ -390,7 +391,7 @@ namespace SmartRoutines.UI.Forms
         // ─── Create New Routine button (FIX: was referenced but never defined) ─
         private void btnCreateNew_Click(object sender, EventArgs e)
         {
-            DisplayPage<Controls.UC_ActionsMain>();
+            DisplayPage<UC_ActionsMain>();
         }
 
         // ─── Theme / Layout ────────────────────────────────────────────────

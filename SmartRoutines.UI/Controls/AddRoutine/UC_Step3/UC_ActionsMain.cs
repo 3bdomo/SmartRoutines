@@ -7,17 +7,16 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Threading.Tasks;
 using SmartRoutines.UI.Controls.AddRoutine;
-using SmartRoutines.UI.Controls.Step3;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 using Guna.UI2.WinForms;
 
-namespace SmartRoutines.UI.Controls
+namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 {
     public partial class UC_ActionsMain : SmartUserControl
     {
         private UC_WizardStepper _stepper = null!;
         private UC_Step1_Identity _step1 = null!;
         private UC_Step2_Trigger _step2 = null!;
-        private UC_Step3_Actions _step3 = null!;
 
         private Guna2Button _btnBack = null!;
         private Guna2Button _btnNext = null!;
