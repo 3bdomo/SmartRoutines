@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Project_2.Forms;
 using SmartRoutines.Data;
+using SmartRoutines.Logic;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
@@ -19,15 +19,27 @@ namespace SmartRoutines.UI
                 {
                     // Register services and dependencies here
                     services.AddLogicServices();
+                    // pass IConfiguration to data registration
                     services.AddDataServices();
                     services.AddTransient<FrmMain>();
                 })
                 .Build();
 
+            // Initialize WinForms application configuration
             ApplicationConfiguration.Initialize();
 
+            // Start the host and run the main form resolved from DI
+            host.Start();
+            using (var scope = host.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var mainForm = services.GetRequiredService<FrmMain>();
+                Application.Run(mainForm);
+            }
 
-
+            // Stop the host gracefully when the form closes
+            host.StopAsync().GetAwaiter().GetResult();
+            host.Dispose();
         }
     }
 }

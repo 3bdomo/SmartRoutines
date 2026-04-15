@@ -1,14 +1,16 @@
 ﻿using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Domain.Models;
+using SmartRoutines.Core.DTOs;
 using SmartRoutines.Core.Interfaces.Data;
+using SmartRoutines.Core.Interfaces.Logic;
 
 namespace SmartRoutines.Logic.Services;
 
 /// <summary>
 /// Persists action execution results for audit and troubleshooting.
 /// </summary>
-public sealed class LoggerService
+public sealed class LoggerService : IActivityLogService
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -19,6 +21,16 @@ public sealed class LoggerService
     public LoggerService(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+    }
+
+    public Task ClearAllLogsAsync()
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<(IReadOnlyList<ActivityLogDto> Logs, int TotalCount)> GetPagedLogsAsync(int page, int pageSize, LogStatus? statusFilter = null, Guid? routineId = null)
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>
