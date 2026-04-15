@@ -1,18 +1,17 @@
 using Guna.UI2.WinForms;
 using Microsoft.Extensions.DependencyInjection;
+using SmartRoutines.Core.Interfaces.Logic;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 using SmartRoutines.UI.Controls.Common;
 using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.UI.Core.Tray;
 using System.Reflection;
-using SmartRoutines.UI.Controls.Common;
-using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI.Forms
 {
     public partial class FrmMain : Form
     {
+        private IAutomationEngine _engine;
         private Guna2Button? _activeNavButton;
         private bool _sidebarCollapsed = false;
         private const int SidebarExpandedWidth = 310;
@@ -43,8 +42,9 @@ namespace SmartRoutines.UI.Forms
         // Only reload dashboard data after a routine is saved — not on every navigation
         private bool _dashboardNeedsRefresh = true;
 
-        public FrmMain(IServiceProvider serviceProvider)
+        public FrmMain(IServiceProvider serviceProvider, IAutomationEngine engine)
         {
+            _engine = engine;
             _serviceProvider = serviceProvider;
             InitializeComponent();
 
@@ -842,6 +842,11 @@ namespace SmartRoutines.UI.Forms
             pnlEngineStatusBase.MouseEnter += (s, e) => _hoverTimer.Start();
             lblEngineStatus.MouseEnter += (s, e) => _hoverTimer.Start();
             lblEngineSubtitle.MouseEnter += (s, e) => _hoverTimer.Start();
+        }
+
+        private void FrmMain_Load(object sender, EventArgs e)
+        {
+            _engine.StartAsync();
         }
 
         protected override CreateParams CreateParams
