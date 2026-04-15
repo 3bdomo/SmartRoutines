@@ -7,7 +7,6 @@ using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Logic.Services;
 using SmartRoutines.UI.Controls;
-using SmartRoutines.UI.Controls.Dashboard;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI
