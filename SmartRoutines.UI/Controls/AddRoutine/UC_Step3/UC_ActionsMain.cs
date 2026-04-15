@@ -14,7 +14,7 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
         private UC_WizardStepper _stepper = null!;
         private UC_Step1_Identity _step1 = null!;
         private UC_Step2_Trigger _step2 = null!;
-        private UC_ActionBlock _step3 = null!;
+        // _step3 is declared in the designer partial; do not redeclare here.
 
         private Guna2Button _btnBack = null!;
         private Guna2Button _btnNext = null!;
@@ -42,7 +42,8 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
             // 2. Steps
             _step1 = new UC_Step1_Identity();
             _step2 = new UC_Step2_Trigger();
-            _step3 = new UC_ActionBlock();
+            // _step3 is created by the designer (added to pnlContent in InitializeComponent)
+            _step3 = new UC_Step3_Actions();
 
             // 3. Footer Buttons
             _btnCancel = CreateFooterButton("Cancel", SmartTheme.Surface2, false);
