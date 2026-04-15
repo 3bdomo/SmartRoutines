@@ -3,9 +3,11 @@ using SmartRoutines.Core.DTOs;
 using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.UI.Controls.AddRoutine;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
+using Guna.UI2.WinForms;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 using SmartRoutines.UI.Core.Theme;
 
-namespace SmartRoutines.UI.Controls
+namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 {
     public partial class UC_ActionsMain : SmartUserControl
     {

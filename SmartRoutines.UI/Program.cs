@@ -4,6 +4,7 @@ using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Data;
 using SmartRoutines.Logic.Services;
 using SmartRoutines.UI.Controls;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
