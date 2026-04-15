@@ -1,14 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
-using SmartRoutines.Data;
-using SmartRoutines.UI.Forms;
-using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.Core.Interfaces.Logic;
+using SmartRoutines.Data;
 using SmartRoutines.Logic.Services;
 using SmartRoutines.UI.Controls;
-using SmartRoutines.UI.Controls.Dashboard;
-using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
+using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI
 {
@@ -25,7 +21,7 @@ namespace SmartRoutines.UI
                 {
                     // Register services and dependencies here
                     services.AddDataServices(context.Configuration);
-                    
+
                     // Logic Services
                     services.AddScoped<IRoutineService, RoutineService>();
                     services.AddScoped<IDashboardService, DashboardService>();
@@ -33,7 +29,7 @@ namespace SmartRoutines.UI
                     // Forms & Pages
                     services.AddTransient<FrmMain>();
                     services.AddTransient<UC_Dashboard>();
-                    services.AddTransient<UC_ActionsMain>();
+                    services.AddTransient<Controls.UC_ActionsMain>();
                     services.AddTransient<UC_Settings>();
                 })
                 .Build();

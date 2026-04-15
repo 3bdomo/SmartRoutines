@@ -1,14 +1,9 @@
-using SmartRoutines.UI.Core.Theme;
-using SmartRoutines.Core.Interfaces.Logic;
-using SmartRoutines.Core.DTOs;
-using System;
-using System.Linq;
-using System.Drawing;
-using System.Windows.Forms;
-using System.Threading.Tasks;
-using SmartRoutines.UI.Controls.AddRoutine;
-using SmartRoutines.UI.Controls.Step3;
 using Guna.UI2.WinForms;
+using SmartRoutines.Core.DTOs;
+using SmartRoutines.Core.Interfaces.Logic;
+using SmartRoutines.UI.Controls.AddRoutine;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
+using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -17,7 +12,7 @@ namespace SmartRoutines.UI.Controls
         private UC_WizardStepper _stepper = null!;
         private UC_Step1_Identity _step1 = null!;
         private UC_Step2_Trigger _step2 = null!;
-        private UC_Step3_Actions _step3 = null!;
+        private UC_ActionBlock _step3 = null!;
 
         private Guna2Button _btnBack = null!;
         private Guna2Button _btnNext = null!;
@@ -45,7 +40,7 @@ namespace SmartRoutines.UI.Controls
             // 2. Steps
             _step1 = new UC_Step1_Identity();
             _step2 = new UC_Step2_Trigger();
-            _step3 = new UC_Step3_Actions();
+            _step3 = new UC_ActionBlock();
 
             // 3. Footer Buttons
             _btnCancel = CreateFooterButton("Cancel", SmartTheme.Surface2, false);
