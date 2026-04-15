@@ -1,4 +1,4 @@
-﻿namespace SmartRoutines.UI.Controls.Step3;
+﻿namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 
 partial class UC_EmptyState
 {

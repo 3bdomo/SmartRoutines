@@ -1,11 +1,8 @@
-using System;
 using System.ComponentModel;
-using System.Drawing;
-using System.Windows.Forms;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 
-namespace SmartRoutines.UI.Controls.Step3;
+namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 
 public enum ActionBlockInputMode
 {
@@ -358,4 +355,3 @@ public class UC_ActionBlock : SmartUserControl
         };
     }
 }
-

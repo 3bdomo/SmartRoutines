@@ -25,11 +25,11 @@ namespace SmartRoutines.UI.Controls
         public UC_LogItem(ActivityLog log) : this()
         {
 
-           
+
             RoutenNameLab.Text = log.RoutineName;
             lblDetails.Text = log.Message;
             lblTime.Text = log.CreatedAt.ToString("h:mm:ss tt");
-           // lblSummaryText.Text = log.Message; // جوا الـ pnlSummary
+            lblSummaryText.Text = log.Message; // جوا الـ pnlSummary
 
             // ── الخطوط ──
             RoutenNameLab.Font = SmartTheme.FontBodyBold;
@@ -40,17 +40,14 @@ namespace SmartRoutines.UI.Controls
 
             lblTime.Font = SmartTheme.FontCaption;
             lblTime.ForeColor = SmartTheme.TextMuted;
+            pnlSummary.BackColor = SmartTheme.Surface2;
+            pnlSummary.BorderRadius = 10;
+            lblSummaryText.ForeColor= SmartTheme.TextMuted;
 
 
-            // ── Guna2 Circle Background ──
-            pnlIcon.Size = new Size(36, 36);
-            pnlIcon.Location = new Point(20, (this.Height - 36) / 2 - 10);
-            pnlIcon.BorderRadius = 18; // Perfect circle
-            pnlIcon.BorderStyle = System.Drawing.Drawing2D.DashStyle.Solid; // Remove dot
+            // ── Guna2CirclePictureBox ──
 
-            // ── Status Icon ──
-            picStatus.Size = new Size(18, 18);
-            picStatus.Location = new Point(9, 9); // Center in 36x36 panel
+            picStatus.Size = new Size(50, 50);
             picStatus.SizeMode = PictureBoxSizeMode.Zoom;
             picStatus.Padding = new Padding(0);
             picStatus.BackColor = Color.Transparent;
@@ -80,16 +77,11 @@ namespace SmartRoutines.UI.Controls
 
 
             // ── Summary Panel ──
-            pnlSummary.BackColor = SmartTheme.Surface3;
-            pnlSummary.BorderRadius = 6;
-            lblSummaryText.Text = log.Message;
-            lblSummaryText.Font = SmartTheme.FontMono;
-            lblSummaryText.ForeColor = SmartTheme.TextSecondary;
-            
-            // ── Native Structural Anchoring ──
-            lblTime.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            pnlSummary.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            this.BackColor = Color.Transparent; // Merge natively with container
+            //pnlSummary.BackColor = SmartTheme.Surface;
+            //pnlSummary.BorderRadius = 10;
+            //lblSummaryText.Text = log.Message;
+            //lblSummaryText.Font = SmartTheme.FontMono;
+            //lblSummaryText.ForeColor = SmartTheme.TextSecondary;
 
             // ── Hover ──
             this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface2;
@@ -111,6 +103,11 @@ namespace SmartRoutines.UI.Controls
         private void RoutenNameLab_Click(object sender, EventArgs e)
         {
             //SmartTheme.FontBodyBold;
+        }
+
+        private void lblDetails_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

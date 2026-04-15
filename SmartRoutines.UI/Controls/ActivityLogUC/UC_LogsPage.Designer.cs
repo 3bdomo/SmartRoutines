@@ -51,10 +51,12 @@
             pnlHeader.Controls.Add(lblTitle);
             pnlHeader.CustomizableEdges = customizableEdges3;
             _transition.SetDecoration(pnlHeader, Guna.UI2.AnimatorNS.DecorationType.None);
+            pnlHeader.Dock = DockStyle.Top;
             pnlHeader.Location = new Point(0, 0);
+            pnlHeader.Margin = new Padding(0);
             pnlHeader.Name = "pnlHeader";
             pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges4;
-            pnlHeader.Size = new Size(900, 112);
+            pnlHeader.Size = new Size(2295, 148);
             pnlHeader.TabIndex = 0;
             // 
             // btnClearLogs
@@ -68,10 +70,11 @@
             btnClearLogs.DisabledState.ForeColor = Color.FromArgb(141, 141, 141);
             btnClearLogs.Font = new Font("Segoe MDL2 Assets", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnClearLogs.ForeColor = Color.White;
-            btnClearLogs.Location = new Point(649, 12);
+            btnClearLogs.Location = new Point(1902, 25);
+            btnClearLogs.Margin = new Padding(4);
             btnClearLogs.Name = "btnClearLogs";
             btnClearLogs.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            btnClearLogs.Size = new Size(220, 79);
+            btnClearLogs.Size = new Size(362, 104);
             btnClearLogs.TabIndex = 1;
             btnClearLogs.Text = "  Clear Logs";
             // 
@@ -79,7 +82,8 @@
             // 
             lblTitle.BackColor = Color.Transparent;
             _transition.SetDecoration(lblTitle, Guna.UI2.AnimatorNS.DecorationType.None);
-            lblTitle.Location = new Point(20, 29);
+            lblTitle.Location = new Point(26, 38);
+            lblTitle.Margin = new Padding(4);
             lblTitle.Name = "lblTitle";
             lblTitle.Size = new Size(236, 43);
             lblTitle.TabIndex = 0;
@@ -89,36 +93,46 @@
             // 
             pnlDivider.CustomizableEdges = customizableEdges5;
             _transition.SetDecoration(pnlDivider, Guna.UI2.AnimatorNS.DecorationType.None);
-            pnlDivider.Location = new Point(0, 520);
+            pnlDivider.Dock = DockStyle.Top;
+            pnlDivider.Location = new Point(0, 148);
             pnlDivider.Name = "pnlDivider";
             pnlDivider.ShadowDecoration.CustomizableEdges = customizableEdges6;
-            pnlDivider.Size = new Size(900, 1);
+            pnlDivider.Size = new Size(2295, 1);
             pnlDivider.TabIndex = 0;
             // 
             // ucConsole
             // 
             ucConsole.BackColor = Color.FromArgb(18, 18, 18);
             _transition.SetDecoration(ucConsole, Guna.UI2.AnimatorNS.DecorationType.None);
+            ucConsole.Dock = DockStyle.Bottom;
             ucConsole.Font = new Font("Segoe UI", 9F);
             ucConsole.ForeColor = Color.FromArgb(255, 255, 255);
-            ucConsole.Location = new Point(20, 596);
+            ucConsole.Location = new Point(0, 756);
+            ucConsole.Margin = new Padding(0);
             ucConsole.Name = "ucConsole";
-            ucConsole.Size = new Size(880, 464);
+            ucConsole.Size = new Size(2295, 776);
             ucConsole.TabIndex = 3;
             // 
             // pnlLogsArea
             // 
+            // Make logs area fill the space between header/divider and the bottom console,
+            // so ExecutionHistory height does not create a large fixed gap.
+            pnlLogsArea.AutoSize = false;
+            // remove AutoSizeMode so the panel doesn't expand unexpectedly
             pnlLogsArea.CustomizableEdges = customizableEdges7;
             _transition.SetDecoration(pnlLogsArea, Guna.UI2.AnimatorNS.DecorationType.None);
-            pnlLogsArea.Location = new Point(20, 144);
+            // Important: use Fill so this panel occupies the remaining space and the console stays docked at bottom
+            pnlLogsArea.Dock = DockStyle.Fill;
+            pnlLogsArea.Location = new Point(0, 149);
+            pnlLogsArea.Margin = new Padding(0);
             pnlLogsArea.Name = "pnlLogsArea";
             pnlLogsArea.ShadowDecoration.CustomizableEdges = customizableEdges8;
-            pnlLogsArea.Size = new Size(849, 425);
+            pnlLogsArea.Size = new Size(2295, 0);
             pnlLogsArea.TabIndex = 4;
             // 
             // UC_LogsPage
             // 
-            AutoScaleDimensions = new SizeF(17F, 41F);
+            AutoScaleDimensions = new SizeF(22F, 54F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoScroll = true;
             Controls.Add(pnlLogsArea);
@@ -126,8 +140,9 @@
             Controls.Add(pnlDivider);
             Controls.Add(pnlHeader);
             _transition.SetDecoration(this, Guna.UI2.AnimatorNS.DecorationType.None);
+            Margin = new Padding(4);
             Name = "UC_LogsPage";
-            Size = new Size(900, 1063);
+            Size = new Size(2295, 1532);
             pnlHeader.ResumeLayout(false);
             pnlHeader.PerformLayout();
             ResumeLayout(false);
@@ -139,7 +154,7 @@
         private Guna.UI2.WinForms.Guna2HtmlLabel lblTitle;
         private Guna.UI2.WinForms.Guna2Button btnClearLogs;
         private Guna.UI2.WinForms.Guna2Panel pnlDivider;
-       // private UC_LiveConsole uC_LiveConsole1;
+        // private UC_LiveConsole uC_LiveConsole1;
         private UC_LiveConsole ucConsole;
         private Guna.UI2.WinForms.Guna2Panel pnlLogsArea;
         //private UC_LiveConsole uC_LiveConsole2;

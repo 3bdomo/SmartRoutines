@@ -1,6 +1,7 @@
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
 using SmartRoutines.UI.Core.Theme;
 
-namespace SmartRoutines.UI.Controls
+namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 {
     partial class UC_ActionsMain
     {
@@ -33,24 +34,28 @@ namespace SmartRoutines.UI.Controls
             this.pnlStepper = new System.Windows.Forms.Panel();
             this.pnlContent = new System.Windows.Forms.Panel();
             this.pnlFooter = new System.Windows.Forms.Panel();
+            this._step3 = new UC_Step3_Actions();
             this.SuspendLayout();
+            
             // 
             // pnlStepper
             // 
             this.pnlStepper.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnlStepper.Height = 80;
+            this.pnlStepper.Height = 84;
             this.pnlStepper.Name = "pnlStepper";
             // 
             // pnlContent
             // 
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlContent.Name = "pnlContent";
+            this.pnlContent.Controls.Add(this._step3);
             // 
             // pnlFooter
             // 
             this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlFooter.Height = 70;
+            this.pnlFooter.Height = 84;
             this.pnlFooter.Name = "pnlFooter";
+            
             // 
             // UC_ActionsMain
             // 
@@ -60,7 +65,7 @@ namespace SmartRoutines.UI.Controls
             this.Controls.Add(this.pnlStepper);
             this.Controls.Add(this.pnlFooter);
             this.Name = "UC_ActionsMain";
-            this.Size = new System.Drawing.Size(900, 600);
+            this.Size = new Size(950, 680);
             this.ResumeLayout(false);
         }
 
@@ -69,5 +74,6 @@ namespace SmartRoutines.UI.Controls
         private System.Windows.Forms.Panel pnlStepper;
         private System.Windows.Forms.Panel pnlContent;
         private System.Windows.Forms.Panel pnlFooter;
+        private UC_Step3_Actions _step3;
     }
 }

@@ -7,7 +7,8 @@ using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Logic.Services;
 using SmartRoutines.UI.Controls;
-using SmartRoutines.UI.Core.Helper;
+using SmartRoutines.UI.Controls.Dashboard;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI
 {
@@ -37,16 +38,12 @@ namespace SmartRoutines.UI
                 })
                 .Build();
 
-            //ApplicationConfiguration.Initialize();
-
-            //var frm = new FrmWizard();
-            ////Settings.Controls.Add(new fr());
-
-            //Application.Run(frm);
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
             var mainForm = host.Services.GetRequiredService<FrmMain>();
             Application.Run(mainForm);
-
         }
     }
 }
