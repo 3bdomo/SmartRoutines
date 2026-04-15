@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Logic.ActionExecutors;
 using SmartRoutines.Logic.Services;
@@ -11,28 +11,32 @@ namespace SmartRoutines.Logic;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Adds SmartRoutines logic services and action executors.
+    /// Adds SmartRoutines logic services, action executors, and the action runner.
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
-    /// <returns>The configured service collection.</returns>
+    /// <returns>The configured service collection for chaining.</returns>
     public static IServiceCollection AddLogicServices(this IServiceCollection services)
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentNullException.ThrowIfNull(services);
 
-        services.AddScoped<ILiveLogger, LiveLogger>();
+        // ── Live logger: Singleton so the UI can subscribe to its events once
+        //    and receive notifications across the entire application lifetime.
+        services.AddSingleton<LiveLogger>();
+        services.AddSingleton<ILiveLogger>(sp => sp.GetRequiredService<LiveLogger>());
 
-        services.AddScoped<IAction, LaunchAppExecutor>();
-        services.AddScoped<IAction, OpenUrlExecutor>();
-        services.AddScoped<IAction, AudioExecutor>();
-        services.AddScoped<IAction, ProcessKillerExecutor>();
-        services.AddScoped<IAction, RunCommandExecutor>();
+        // ── Activity log persistence service (used by the Logs page)
+        services.AddScoped<IActivityLogService, LoggerService>();
 
-        services.AddScoped<ActionRunner>();
+        // ── Action executors: Transient — each pipeline run gets fresh instances
+        services.AddTransient<IAction, LaunchAppExecutor>();
+        services.AddTransient<IAction, OpenUrlExecutor>();
+        services.AddTransient<IAction, AudioExecutor>();
+        services.AddTransient<IAction, ProcessKillerExecutor>();
+        services.AddTransient<IAction, RunCommandExecutor>();
+
+        // ── Action runner: Transient — constructs a new map per pipeline run
+        services.AddTransient<ActionRunner>();
+
         return services;
     }
 }
-
-
