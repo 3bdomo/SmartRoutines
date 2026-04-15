@@ -84,7 +84,8 @@ namespace SmartRoutines.UI.Controls
             // 
             // pnlIcon
             // 
-            pnlIcon.BorderRadius = 70;
+            // Increased the icon container for a slightly larger icon
+            pnlIcon.BorderRadius = 36;
             pnlIcon.BorderStyle = System.Drawing.Drawing2D.DashStyle.Dot;
             pnlIcon.Controls.Add(picStatus);
             pnlIcon.CustomizableEdges = customizableEdges1;
@@ -93,16 +94,17 @@ namespace SmartRoutines.UI.Controls
             pnlIcon.Margin = new Padding(4);
             pnlIcon.Name = "pnlIcon";
             pnlIcon.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            pnlIcon.Size = new Size(200, 200);
+            pnlIcon.Size = new Size(72, 72);
             pnlIcon.TabIndex = 4;
             // 
             // picStatus
             // 
             _transition.SetDecoration(picStatus, Guna.UI2.AnimatorNS.DecorationType.None);
-            picStatus.Location = new Point(37, 16);
+            // Centered and enlarged status icon
+            picStatus.Location = new Point(20, 20);
             picStatus.Margin = new Padding(4);
             picStatus.Name = "picStatus";
-            picStatus.Size = new Size(100, 100);
+            picStatus.Size = new Size(32, 32);
             picStatus.TabIndex = 0;
             picStatus.TabStop = false;
             // 
