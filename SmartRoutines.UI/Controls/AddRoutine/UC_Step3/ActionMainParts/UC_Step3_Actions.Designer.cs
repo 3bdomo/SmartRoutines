@@ -1,6 +1,8 @@
-﻿namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
+﻿using SmartRoutines.UI.Core.Theme;
 
-partial class UC_Step3_Actions
+namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
+
+partial class UC_Step3_Actions : SmartUserControl
 {
     private System.ComponentModel.IContainer components = null;
     private System.Windows.Forms.TableLayoutPanel _root;
