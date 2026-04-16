@@ -19,24 +19,23 @@ namespace SmartRoutines.Data
         /// <param name="services">The service collection to configure.</param>
         /// <param name="configuration">Application configuration to read the connection string from.</param>
         /// <returns>The configured service collection.</returns>
-        public static IServiceCollection AddDataServices(this IServiceCollection services)
+        public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
         {
             if (services == null) throw new ArgumentNullException(nameof(services));
-
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured. Please add it to your configuration (e.g., appsettings.json).");
+                throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured. Please add it to your appsettings.json.");
             }
 
             services.AddDbContext<SmartRoutinesDbContext>(options =>
             {
-                options.UseSqlServer(connectionString);
+                options.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure();
+                });
             });
 
             // Register the UnitOfWork as scoped so the same DbContext is shared across repositories within a unit of work.

@@ -4,15 +4,25 @@ using System.Drawing;
 using System.Windows.Forms;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI.Controls
 {
     public partial class UC_RoutineCard : SmartUserControl
     {
         public event EventHandler StateChanged = null!;
+        public event EventHandler DeleteRequested = null!;
 
         private bool _isActive = true;
         private bool _isRunning = false;
+        private Guid _id;
+
+        [Category("Routine Properties")]
+        public Guid Id
+        {
+            get => _id;
+            set => _id = value;
+        }
 
         private Guna2GradientPanel _pnlIcon = null!;
         private Guna2Panel _pnlScheduleRegion = null!;
@@ -25,10 +35,10 @@ namespace SmartRoutines.UI.Controls
         public UC_RoutineCard()
         {
             InitializeComponent();
-            
+
             // Performance: High quality rendering styles
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint | 
-                          ControlStyles.UserPaint | 
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+                          ControlStyles.UserPaint |
                           ControlStyles.OptimizedDoubleBuffer, true);
             this.DoubleBuffered = true;
 
@@ -45,7 +55,7 @@ namespace SmartRoutines.UI.Controls
         {
             _pnlIcon = new Guna2GradientPanel
             {
-                Size = new Size(52, 52), // Larger for better balance
+                Size = new Size(52, 52),
                 Location = new Point(20, 20),
                 BorderRadius = 14,
                 FillColor = Color.FromArgb(99, 102, 241),
@@ -53,7 +63,6 @@ namespace SmartRoutines.UI.Controls
                 GradientMode = System.Drawing.Drawing2D.LinearGradientMode.ForwardDiagonal
             };
 
-            // Maintain icon position during container resizes
             _pnlIcon.Anchor = AnchorStyles.Top | AnchorStyles.Left;
 
             var iconPic = new PictureBox
@@ -62,7 +71,7 @@ namespace SmartRoutines.UI.Controls
                 SizeMode = PictureBoxSizeMode.Zoom,
                 Size = new Size(26, 26),
                 BackColor = Color.Transparent,
-                Location = new Point(13, 13) // Centralize in 52x52
+                Location = new Point(13, 13)
             };
             _pnlIcon.Controls.Add(iconPic);
 
@@ -225,17 +234,18 @@ namespace SmartRoutines.UI.Controls
 
             pnlBase.FillColor = SmartTheme.Surface;
             pnlBase.BorderRadius = 16;
-            
+
+            // PERF FIX: Reduced shadow depth from 40 → 12 and padding from (0,0,10,10) → (0,0,4,4)
+            // Heavy shadow was the main cause of slow window transitions and minimize animation
             pnlBase.ShadowDecoration.Enabled = true;
             pnlBase.ShadowDecoration.Color = Color.Black;
-            pnlBase.ShadowDecoration.Depth = 40;
-            pnlBase.ShadowDecoration.Shadow = new Padding(0, 0, 10, 10);
+            pnlBase.ShadowDecoration.Depth = 12;
+            pnlBase.ShadowDecoration.Shadow = new Padding(0, 0, 4, 4);
 
             lblName.Font = SmartTheme.FontSubheader;
             lblName.ForeColor = SmartTheme.TextPrimary;
-            // Anchor name so it remains aligned when parent resizes
             lblName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            lblName.Location = new Point(_pnlIcon.Right + 12, _pnlIcon.Top + 14); // Better vertical alignment
+            lblName.Location = new Point(_pnlIcon.Right + 12, _pnlIcon.Top + 14);
 
             lblDescription.Font = SmartTheme.FontBody;
             lblDescription.ForeColor = SmartTheme.TextSecondary;
@@ -256,7 +266,6 @@ namespace SmartRoutines.UI.Controls
             lblActive.Font = SmartTheme.FontBody;
             lblActive.ForeColor = SmartTheme.TextSecondary;
 
-            // Edit / Delete buttons
             btnEdit.FillColor = Color.Transparent;
             btnEdit.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("edit.png", 18);
             btnEdit.Text = "";
@@ -266,15 +275,24 @@ namespace SmartRoutines.UI.Controls
             btnDelete.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("trash_clean.png", 18);
             btnDelete.Text = "";
             btnDelete.HoverState.FillColor = SmartTheme.Surface2;
+            btnDelete.Click += (s, e) => DeleteRequested?.Invoke(this, EventArgs.Empty);
 
-            // Card hover shadow
-            pnlBase.MouseEnter += (s, e) => { if (!_isRunning) pnlBase.ShadowDecoration.Depth = 80; };
-            pnlBase.MouseLeave += (s, e) => { if (!_isRunning) pnlBase.ShadowDecoration.Depth = 40; };
+            // PERF FIX: Removed hover shadow depth change (was triggering full repaint on every MouseEnter/Leave)
+            // pnlBase.MouseEnter and MouseLeave shadow updates removed intentionally
+
             pnlBase.Paint += PnlBase_Paint;
-
             btnRunNow.Click += BtnRunNow_Click;
+            btnEdit.Click += BtnEdit_Click;
 
             UpdateStateStyle();
+        }
+
+        private void BtnEdit_Click(object? sender, EventArgs e)
+        {
+            if (this.FindForm() is SmartRoutines.UI.Forms.FrmMain main)
+            {
+                main.DisplayPage<UC_ActionsMain>();
+            }
         }
 
         private void PnlBase_Paint(object? sender, PaintEventArgs e)
@@ -282,7 +300,7 @@ namespace SmartRoutines.UI.Controls
             // Manual drawing removed in favor of native Guna2 border properties
         }
 
-        private void BtnRunNow_Click(object sender, EventArgs e)
+        private void BtnRunNow_Click(object? sender, EventArgs e)
         {
             IsRunning = !IsRunning;
         }
@@ -290,7 +308,6 @@ namespace SmartRoutines.UI.Controls
         // ─── State style ──────────────────────────────────────────────────
         private void UpdateStateStyle()
         {
-            // Toggle
             if (_isActive)
             {
                 toggleActive.CheckedState.FillColor = SmartTheme.Primary;
@@ -306,14 +323,13 @@ namespace SmartRoutines.UI.Controls
 
             if (_isRunning)
             {
-                // FIX: use native Guna2 border properties so the red line 
-                // follows the card's 16px rounded corners perfectly.
                 pnlBase.BorderThickness = 2;
                 pnlBase.BorderColor = SmartTheme.Danger;
 
-                pnlBase.ShadowDecoration.Depth = 40;
+                // PERF FIX: Reduced shadow depth from 40 → 12
+                pnlBase.ShadowDecoration.Depth = 12;
                 pnlBase.ShadowDecoration.Color = Color.Black;
-                pnlBase.Invalidate(); 
+                pnlBase.Invalidate();
 
                 btnRunNow.FillColor = SmartTheme.Danger;
                 btnRunNow.ForeColor = Color.White;
@@ -324,18 +340,19 @@ namespace SmartRoutines.UI.Controls
             }
             else
             {
-                pnlBase.BorderThickness = 0; // Remove red border
-                pnlBase.Invalidate(); 
+                pnlBase.BorderThickness = 0;
+                pnlBase.Invalidate();
 
                 pnlBase.ShadowDecoration.Color = Color.Black;
-                pnlBase.ShadowDecoration.Depth = 40;
+                // PERF FIX: Reduced shadow depth from 40 → 12
+                pnlBase.ShadowDecoration.Depth = 12;
 
                 if (_isActive)
                 {
                     btnRunNow.FillColor = SmartTheme.Primary;
                     btnRunNow.ForeColor = SmartTheme.TextPrimary;
                     btnRunNow.HoverState.FillColor = SmartTheme.PrimaryHover;
-                    btnRunNow.Image = null; // Corrected
+                    btnRunNow.Image = null;
                 }
                 else
                 {
@@ -346,7 +363,7 @@ namespace SmartRoutines.UI.Controls
                 btnRunNow.Text = "Run Now";
                 btnRunNow.Image = SmartRoutines.UI.Core.Helper.IconLoader.GetIcon("play.png", 18);
                 btnRunNow.ImageOffset = new Point(0, 0);
-                btnRunNow.BorderRadius = 20; // High rounding for Figma style
+                btnRunNow.BorderRadius = 20;
             }
         }
 
@@ -362,7 +379,6 @@ namespace SmartRoutines.UI.Controls
 
         public void ScaleUI(float factor)
         {
-            // Only rebuild fonts when the factor actually changes — prevents GDI+ handle leaks
             if (Math.Abs(factor - _cachedScaleFactor) < 0.01f) return;
             _cachedScaleFactor = factor;
 
@@ -375,12 +391,12 @@ namespace SmartRoutines.UI.Controls
 
             this.SuspendLayout();
 
-            lblName.Font        = _cachedFontSubheader;
+            lblName.Font = _cachedFontSubheader;
             lblDescription.Font = _cachedFontBody;
-            lblSchedule.Font    = _cachedFontBody;
-            lblActions.Font     = _cachedFontBody;
-            lblLastRun.Font     = _cachedFontBody;
-            btnRunNow.Font      = _cachedFontBody;
+            lblSchedule.Font = _cachedFontBody;
+            lblActions.Font = _cachedFontBody;
+            lblLastRun.Font = _cachedFontBody;
+            btnRunNow.Font = _cachedFontBody;
 
             if (_pnlIcon != null)
             {

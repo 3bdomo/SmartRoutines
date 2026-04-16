@@ -1,7 +1,4 @@
-using System.Text.Json;
-using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Domain.Models;
-using SmartRoutines.Core.Interfaces.Logic;
 
 namespace SmartRoutines.Logic.TriggerMonitors
 {
@@ -50,4 +47,4 @@ namespace SmartRoutines.Logic.TriggerMonitors
             };
         }
     }
-}
+}

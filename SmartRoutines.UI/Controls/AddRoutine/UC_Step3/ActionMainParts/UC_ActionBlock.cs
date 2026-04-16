@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 
@@ -337,5 +337,21 @@ public class UC_ActionBlock : SmartUserControl
         _btnMute.FillColor = _isMuted ? Color.FromArgb(176, 52, 52) : Color.FromArgb(130, 42, 42);
         _btnUnmute.FillColor = _isMuted ? Color.FromArgb(32, 110, 70) : Color.FromArgb(48, 148, 90);
     }
-}
 
+    public SmartRoutines.Core.DTOs.ActionDto ToDto(int order)
+    {
+        // Map Title to ActionType
+        SmartRoutines.Core.Domain.Enums.ActionType type = Title.Contains("Mute") ? SmartRoutines.Core.Domain.Enums.ActionType.Mute :
+                                                          Title.Contains("Launch") ? SmartRoutines.Core.Domain.Enums.ActionType.LaunchApp :
+                                                          Title.Contains("Run") ? SmartRoutines.Core.Domain.Enums.ActionType.RunCommand :
+                                                          Title.Contains("URL") ? SmartRoutines.Core.Domain.Enums.ActionType.OpenUrl :
+                                                          SmartRoutines.Core.Domain.Enums.ActionType.Notification;
+
+        return new SmartRoutines.Core.DTOs.ActionDto
+        {
+            Type = type,
+            Arguments = Mode == ActionBlockInputMode.TextInput ? InputText : SliderValue.ToString(),
+            ExecutionOrder = order
+        };
+    }
+}

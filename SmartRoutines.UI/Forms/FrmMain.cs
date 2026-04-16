@@ -1,4 +1,8 @@
 using Guna.UI2.WinForms;
+using Microsoft.Extensions.DependencyInjection;
+using SmartRoutines.Core.Interfaces.Logic;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
+using SmartRoutines.UI.Controls.Common;
 using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.UI.Core.Tray;
 using System.Reflection;
@@ -7,9 +11,10 @@ namespace SmartRoutines.UI.Forms
 {
     public partial class FrmMain : Form
     {
+        private IAutomationEngine _engine;
         private Guna2Button? _activeNavButton;
         private bool _sidebarCollapsed = false;
-        private const int SidebarExpandedWidth = 220;
+        private const int SidebarExpandedWidth = 310;
         private const int SidebarCollapsedWidth = 60;
 
         // --- System Tray ---
@@ -29,17 +34,23 @@ namespace SmartRoutines.UI.Forms
 
         private Label _lblContentTitle = null!;
         private Label _lblContentSubtitle = null!;
-        
+
         // Page caching to eliminate 5-10s load times
         private readonly System.Collections.Generic.Dictionary<Type, UserControl> _pageCache = new();
 
-        public FrmMain()
+        private readonly IServiceProvider _serviceProvider;
+        // Only reload dashboard data after a routine is saved — not on every navigation
+        private bool _dashboardNeedsRefresh = true;
+
+        public FrmMain(IServiceProvider serviceProvider, IAutomationEngine engine)
         {
+            _engine = engine;
+            _serviceProvider = serviceProvider;
             InitializeComponent();
-            
+
             // Performance: High quality rendering styles
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint | 
-                          ControlStyles.UserPaint | 
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+                          ControlStyles.UserPaint |
                           ControlStyles.OptimizedDoubleBuffer, true);
             this.DoubleBuffered = true;
             // Removed recursive call from constructor to prevent startup crash
@@ -159,7 +170,7 @@ namespace SmartRoutines.UI.Forms
                 bool onLeft = clientPoint.X <= resizerSize;
                 bool onRight = clientPoint.X >= this.ClientSize.Width - resizerSize;
                 bool onTop = clientPoint.Y <= resizerSize;
-               bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
+                bool onBottom = clientPoint.Y >= this.ClientSize.Height - resizerSize;
 
                 if (onTop && onLeft) { m.Result = (IntPtr)HTTOPLEFT; return; }
                 else if (onTop && onRight) { m.Result = (IntPtr)HTTOPRIGHT; return; }
@@ -234,34 +245,67 @@ namespace SmartRoutines.UI.Forms
         // ─── Page Navigation ───────────────────────────────────────────────
         private UserControl? _currentPage;
 
-        public void DisplayPage<T>() where T : UserControl, new()
+        public void DisplayPage<T>() where T : UserControl
         {
             Type pageType = typeof(T);
-            
+
             // 1. Hide current page (don't dispose!)
             if (_currentPage != null)
             {
                 _currentPage.Visible = false;
             }
 
-            // 2. Get or create page from cache
-            if (!_pageCache.TryGetValue(pageType, out var page))
-            {
-                page = new T();
-                page.Dock = DockStyle.Fill;
-                pnlMainContent.Controls.Add(page);
-                _pageCache[pageType] = page;
-            }
+            // 2. Get or create page (handles caching and DI)
+            _currentPage = GetPage<T>();
 
-            _currentPage = page;
             _currentPage.Visible = true;
             _currentPage.BringToFront();
-            
+
             // Refresh dashboard layout if it's being shown
             if (_currentPage is Controls.UC_Dashboard dashboard)
             {
                 dashboard.AdjustCardWidths();
+                // Only reload data if a new routine was saved — preserves IsRunning state
+                if (_dashboardNeedsRefresh)
+                {
+                    _dashboardNeedsRefresh = false;
+                    _ = dashboard.ReloadDataAsync();
+                }
             }
+        }
+
+        public T GetPage<T>() where T : UserControl
+        {
+            Type pageType = typeof(T);
+            if (!_pageCache.TryGetValue(pageType, out var page))
+            {
+                page = _serviceProvider.GetRequiredService<T>();
+                page.Dock = DockStyle.Fill;
+                pnlMainContent.Controls.Add(page);
+                _pageCache[pageType] = page;
+                page.Visible = false;
+            }
+            return (T)page;
+        }
+
+        /// <summary>
+        /// Called by the wizard after saving a routine to trigger a fresh dashboard load.
+        /// </summary>
+        public void RequestDashboardRefresh() => _dashboardNeedsRefresh = true;
+
+        public void ShowToast(string message)
+        {
+            var toast = new UC_Toast(message);
+            this.Controls.Add(toast);
+
+            // Position: Top-Right
+            int margin = 20;
+            toast.Location = new Point(
+                this.Width - toast.Width - margin,
+                margin + 40 // Offset for the thin title bar
+            );
+
+            toast.BringToFront();
         }
 
         private void SetActiveNavButton(Guna2Button btn)
@@ -349,7 +393,7 @@ namespace SmartRoutines.UI.Forms
         // ─── Create New Routine button (FIX: was referenced but never defined) ─
         private void btnCreateNew_Click(object sender, EventArgs e)
         {
-            DisplayPage<Controls.UC_ActionsMain>();
+            DisplayPage<UC_ActionsMain>();
         }
 
         // ─── Theme / Layout ────────────────────────────────────────────────
@@ -444,17 +488,20 @@ namespace SmartRoutines.UI.Forms
 
             // Start on Dashboard - DEFERRED safely
             SetActiveNavButton(btnNavDashboard);
-            
+
             if (this.IsHandleCreated)
             {
-                this.BeginInvoke(new Action(() => {
+                this.BeginInvoke(new Action(() =>
+                {
                     DisplayPage<Controls.UC_Dashboard>();
                 }));
             }
             else
             {
-                this.HandleCreated += (s, ev) => {
-                    this.BeginInvoke(new Action(() => {
+                this.HandleCreated += (s, ev) =>
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
                         DisplayPage<Controls.UC_Dashboard>();
                     }));
                 };
@@ -509,7 +556,7 @@ namespace SmartRoutines.UI.Forms
                 Margin = new Padding(0, 0, 12, 0)
             };
             btnCreateNew.Click += btnCreateNew_Click;
-            
+
             var btnTheme = new Guna.UI2.WinForms.Guna2Button
             {
                 Text = "☼",
@@ -684,7 +731,8 @@ namespace SmartRoutines.UI.Forms
             btn.Text = symbol;
             btn.FillColor = Color.Transparent;
             btn.ForeColor = fg;
-            btn.Font = SmartTheme.FontBody;
+            // Use a larger, symbol-friendly font so ✕ □ ─ render visibly
+            btn.Font = new Font("Segoe UI", 13f, FontStyle.Regular);
             btn.BorderRadius = 4;
             btn.Animated = true;
             btn.HoverState.FillColor = SmartTheme.Surface2;
@@ -715,10 +763,10 @@ namespace SmartRoutines.UI.Forms
             timer.Tick += (s, e) =>
             {
                 int current = pnlSidebar.Width;
-                int diff    = targetWidth - current;
-                int step    = (int)(diff * 0.28);
+                int diff = targetWidth - current;
+                int step = (int)(diff * 0.28);
                 if (step == 0 && diff != 0) step = Math.Sign(diff);
-                int next    = current + step;
+                int next = current + step;
 
                 if (Math.Abs(targetWidth - next) <= 1)
                 {
@@ -792,8 +840,13 @@ namespace SmartRoutines.UI.Forms
 
             // Start the timer only when the user actually hovers over the engine panel
             pnlEngineStatusBase.MouseEnter += (s, e) => _hoverTimer.Start();
-            lblEngineStatus.MouseEnter     += (s, e) => _hoverTimer.Start();
-            lblEngineSubtitle.MouseEnter   += (s, e) => _hoverTimer.Start();
+            lblEngineStatus.MouseEnter += (s, e) => _hoverTimer.Start();
+            lblEngineSubtitle.MouseEnter += (s, e) => _hoverTimer.Start();
+        }
+
+        private void FrmMain_Load(object sender, EventArgs e)
+        {
+            _engine.StartAsync();
         }
 
         protected override CreateParams CreateParams

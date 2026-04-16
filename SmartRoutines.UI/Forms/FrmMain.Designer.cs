@@ -20,8 +20,16 @@ namespace SmartRoutines.UI.Forms
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges24 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges25 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges18 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges19 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges20 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges21 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges22 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges23 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges9 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges10 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges16 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges17 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges3 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges4 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
@@ -29,31 +37,23 @@ namespace SmartRoutines.UI.Forms
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges6 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges7 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges8 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges24 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges25 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges11 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges12 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges13 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges10 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges14 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges15 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges16 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges19 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges20 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges18 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges22 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges23 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
-            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges21 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
+            Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges13 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges1 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             Guna.UI2.WinForms.Suite.CustomizableEdges customizableEdges2 = new Guna.UI2.WinForms.Suite.CustomizableEdges();
             guna2BorderlessForm = new Guna2BorderlessForm(components);
             guna2DragControl = new Guna2DragControl(components);
             pnlHeader = new Guna2Panel();
-            btnSidebarCollapse = new Guna2CircleButton();
             btnClose = new Guna2Button();
             btnMaximize = new Guna2Button();
             btnMinimize = new Guna2Button();
             lblAppSubtitle = new Label();
             lblAppTitle = new Label();
+            btnSidebarCollapse = new Guna2CircleButton();
             pnlSidebar = new Guna2Panel();
             pnlSidebarNav = new Panel();
             btnNavSettings = new Guna2Button();
@@ -103,39 +103,25 @@ namespace SmartRoutines.UI.Forms
             pnlHeader.Controls.Add(btnMinimize);
             pnlHeader.Controls.Add(lblAppSubtitle);
             pnlHeader.Controls.Add(lblAppTitle);
-            pnlHeader.CustomizableEdges = customizableEdges9;
+            pnlHeader.CustomizableEdges = customizableEdges24;
             pnlHeader.Dock = DockStyle.Top;
-            pnlHeader.Location = new Point(274, 0);
+            pnlHeader.Location = new Point(0, 0);
             pnlHeader.Margin = new Padding(3, 4, 3, 4);
             pnlHeader.Name = "pnlHeader";
-            pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges10;
-            pnlHeader.Size = new Size(1189, 60);
+            pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges25;
+            pnlHeader.Size = new Size(1463, 60);
             pnlHeader.TabIndex = 0;
-            // 
-            // btnSidebarCollapse
-            // 
-            btnSidebarCollapse.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnSidebarCollapse.Font = new Font("Segoe UI", 9F);
-            btnSidebarCollapse.ForeColor = Color.White;
-            btnSidebarCollapse.Location = new Point(-4, 33);
-            btnSidebarCollapse.Margin = new Padding(3, 4, 3, 4);
-            btnSidebarCollapse.Name = "btnSidebarCollapse";
-            btnSidebarCollapse.ShadowDecoration.CustomizableEdges = customizableEdges17;
-            btnSidebarCollapse.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
-            btnSidebarCollapse.Size = new Size(27, 32);
-            btnSidebarCollapse.TabIndex = 3;
-            btnSidebarCollapse.Click += btnSidebarCollapse_Click;
             // 
             // btnClose
             // 
             btnClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnClose.CustomizableEdges = customizableEdges3;
+            btnClose.CustomizableEdges = customizableEdges18;
             btnClose.Font = new Font("Segoe UI", 9F);
             btnClose.ForeColor = Color.White;
-            btnClose.Location = new Point(1139, 9);
+            btnClose.Location = new Point(1449, 9);
             btnClose.Margin = new Padding(3, 4, 3, 4);
             btnClose.Name = "btnClose";
-            btnClose.ShadowDecoration.CustomizableEdges = customizableEdges4;
+            btnClose.ShadowDecoration.CustomizableEdges = customizableEdges19;
             btnClose.Size = new Size(41, 40);
             btnClose.TabIndex = 4;
             btnClose.Click += btnClose_Click;
@@ -143,13 +129,13 @@ namespace SmartRoutines.UI.Forms
             // btnMaximize
             // 
             btnMaximize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnMaximize.CustomizableEdges = customizableEdges5;
+            btnMaximize.CustomizableEdges = customizableEdges20;
             btnMaximize.Font = new Font("Segoe UI", 9F);
             btnMaximize.ForeColor = Color.White;
-            btnMaximize.Location = new Point(1096, 9);
+            btnMaximize.Location = new Point(1406, 9);
             btnMaximize.Margin = new Padding(3, 4, 3, 4);
             btnMaximize.Name = "btnMaximize";
-            btnMaximize.ShadowDecoration.CustomizableEdges = customizableEdges6;
+            btnMaximize.ShadowDecoration.CustomizableEdges = customizableEdges21;
             btnMaximize.Size = new Size(41, 40);
             btnMaximize.TabIndex = 3;
             btnMaximize.Click += btnMaximize_Click;
@@ -157,13 +143,13 @@ namespace SmartRoutines.UI.Forms
             // btnMinimize
             // 
             btnMinimize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnMinimize.CustomizableEdges = customizableEdges7;
+            btnMinimize.CustomizableEdges = customizableEdges22;
             btnMinimize.Font = new Font("Segoe UI", 9F);
             btnMinimize.ForeColor = Color.White;
-            btnMinimize.Location = new Point(1053, 9);
+            btnMinimize.Location = new Point(1363, 9);
             btnMinimize.Margin = new Padding(3, 4, 3, 4);
             btnMinimize.Name = "btnMinimize";
-            btnMinimize.ShadowDecoration.CustomizableEdges = customizableEdges8;
+            btnMinimize.ShadowDecoration.CustomizableEdges = customizableEdges23;
             btnMinimize.Size = new Size(41, 40);
             btnMinimize.TabIndex = 2;
             btnMinimize.Click += btnMinimize_Click;
@@ -186,18 +172,32 @@ namespace SmartRoutines.UI.Forms
             lblAppTitle.TabIndex = 0;
             lblAppTitle.Text = "Dashboard";
             // 
+            // btnSidebarCollapse
+            // 
+            btnSidebarCollapse.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnSidebarCollapse.Font = new Font("Segoe UI", 9F);
+            btnSidebarCollapse.ForeColor = Color.White;
+            btnSidebarCollapse.Location = new Point(32, 33);
+            btnSidebarCollapse.Margin = new Padding(3, 4, 3, 4);
+            btnSidebarCollapse.Name = "btnSidebarCollapse";
+            btnSidebarCollapse.ShadowDecoration.CustomizableEdges = customizableEdges9;
+            btnSidebarCollapse.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
+            btnSidebarCollapse.Size = new Size(27, 32);
+            btnSidebarCollapse.TabIndex = 3;
+            btnSidebarCollapse.Click += btnSidebarCollapse_Click;
+            // 
             // pnlSidebar
             // 
             pnlSidebar.Controls.Add(pnlSidebarNav);
             pnlSidebar.Controls.Add(pnlSidebarBrand);
             pnlSidebar.Controls.Add(pnlSidebarFooter);
-            pnlSidebar.CustomizableEdges = customizableEdges24;
+            pnlSidebar.CustomizableEdges = customizableEdges16;
             pnlSidebar.Dock = DockStyle.Left;
-            pnlSidebar.Location = new Point(0, 0);
+            pnlSidebar.Location = new Point(0, 60);
             pnlSidebar.Margin = new Padding(3, 4, 3, 4);
             pnlSidebar.Name = "pnlSidebar";
-            pnlSidebar.ShadowDecoration.CustomizableEdges = customizableEdges25;
-            pnlSidebar.Size = new Size(274, 960);
+            pnlSidebar.ShadowDecoration.CustomizableEdges = customizableEdges17;
+            pnlSidebar.Size = new Size(310, 900);
             pnlSidebar.TabIndex = 1;
             // 
             // pnlSidebarNav
@@ -211,48 +211,48 @@ namespace SmartRoutines.UI.Forms
             pnlSidebarNav.Margin = new Padding(3, 4, 3, 4);
             pnlSidebarNav.Name = "pnlSidebarNav";
             pnlSidebarNav.Padding = new Padding(14, 21, 14, 11);
-            pnlSidebarNav.Size = new Size(274, 766);
+            pnlSidebarNav.Size = new Size(310, 706);
             pnlSidebarNav.TabIndex = 2;
             // 
             // btnNavSettings
             // 
-            btnNavSettings.CustomizableEdges = customizableEdges11;
+            btnNavSettings.CustomizableEdges = customizableEdges3;
             btnNavSettings.Dock = DockStyle.Top;
             btnNavSettings.Font = new Font("Segoe UI", 9F);
             btnNavSettings.ForeColor = Color.White;
             btnNavSettings.Location = new Point(14, 139);
             btnNavSettings.Margin = new Padding(3, 4, 3, 4);
             btnNavSettings.Name = "btnNavSettings";
-            btnNavSettings.ShadowDecoration.CustomizableEdges = customizableEdges12;
-            btnNavSettings.Size = new Size(246, 59);
+            btnNavSettings.ShadowDecoration.CustomizableEdges = customizableEdges4;
+            btnNavSettings.Size = new Size(282, 59);
             btnNavSettings.TabIndex = 2;
             btnNavSettings.Click += btnNavSettings_Click;
             // 
             // btnNavLogs
             // 
-            btnNavLogs.CustomizableEdges = customizableEdges13;
+            btnNavLogs.CustomizableEdges = customizableEdges5;
             btnNavLogs.Dock = DockStyle.Top;
             btnNavLogs.Font = new Font("Segoe UI", 9F);
             btnNavLogs.ForeColor = Color.White;
             btnNavLogs.Location = new Point(14, 80);
             btnNavLogs.Margin = new Padding(3, 4, 3, 4);
             btnNavLogs.Name = "btnNavLogs";
-            btnNavLogs.ShadowDecoration.CustomizableEdges = customizableEdges14;
-            btnNavLogs.Size = new Size(246, 59);
+            btnNavLogs.ShadowDecoration.CustomizableEdges = customizableEdges6;
+            btnNavLogs.Size = new Size(282, 59);
             btnNavLogs.TabIndex = 1;
             btnNavLogs.Click += btnNavLogs_Click;
             // 
             // btnNavDashboard
             // 
-            btnNavDashboard.CustomizableEdges = customizableEdges15;
+            btnNavDashboard.CustomizableEdges = customizableEdges7;
             btnNavDashboard.Dock = DockStyle.Top;
             btnNavDashboard.Font = new Font("Segoe UI", 9F);
             btnNavDashboard.ForeColor = Color.White;
             btnNavDashboard.Location = new Point(14, 21);
             btnNavDashboard.Margin = new Padding(3, 4, 3, 4);
             btnNavDashboard.Name = "btnNavDashboard";
-            btnNavDashboard.ShadowDecoration.CustomizableEdges = customizableEdges16;
-            btnNavDashboard.Size = new Size(246, 59);
+            btnNavDashboard.ShadowDecoration.CustomizableEdges = customizableEdges8;
+            btnNavDashboard.Size = new Size(282, 59);
             btnNavDashboard.TabIndex = 0;
             btnNavDashboard.Click += btnNavDashboard_Click;
             // 
@@ -268,7 +268,7 @@ namespace SmartRoutines.UI.Forms
             pnlSidebarBrand.Margin = new Padding(3, 4, 3, 4);
             pnlSidebarBrand.Name = "pnlSidebarBrand";
             pnlSidebarBrand.Padding = new Padding(18, 21, 14, 11);
-            pnlSidebarBrand.Size = new Size(274, 93);
+            pnlSidebarBrand.Size = new Size(310, 93);
             pnlSidebarBrand.TabIndex = 1;
             // 
             // lblBrandSubtitle
@@ -293,11 +293,11 @@ namespace SmartRoutines.UI.Forms
             // 
             pnlLogoBase.BorderRadius = 10;
             pnlLogoBase.Controls.Add(picLogoCircle);
-            pnlLogoBase.CustomizableEdges = customizableEdges19;
+            pnlLogoBase.CustomizableEdges = customizableEdges11;
             pnlLogoBase.Location = new Point(18, 21);
             pnlLogoBase.Margin = new Padding(3, 4, 3, 4);
             pnlLogoBase.Name = "pnlLogoBase";
-            pnlLogoBase.ShadowDecoration.CustomizableEdges = customizableEdges20;
+            pnlLogoBase.ShadowDecoration.CustomizableEdges = customizableEdges12;
             pnlLogoBase.Size = new Size(41, 48);
             pnlLogoBase.TabIndex = 0;
             // 
@@ -307,7 +307,7 @@ namespace SmartRoutines.UI.Forms
             picLogoCircle.Location = new Point(11, 13);
             picLogoCircle.Margin = new Padding(3, 4, 3, 4);
             picLogoCircle.Name = "picLogoCircle";
-            picLogoCircle.ShadowDecoration.CustomizableEdges = customizableEdges18;
+            picLogoCircle.ShadowDecoration.CustomizableEdges = customizableEdges10;
             picLogoCircle.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
             picLogoCircle.Size = new Size(18, 21);
             picLogoCircle.TabIndex = 0;
@@ -318,11 +318,11 @@ namespace SmartRoutines.UI.Forms
             pnlSidebarFooter.BackColor = Color.Transparent;
             pnlSidebarFooter.Controls.Add(pnlEngineStatusBase);
             pnlSidebarFooter.Dock = DockStyle.Bottom;
-            pnlSidebarFooter.Location = new Point(0, 859);
+            pnlSidebarFooter.Location = new Point(0, 799);
             pnlSidebarFooter.Margin = new Padding(3, 4, 3, 4);
             pnlSidebarFooter.Name = "pnlSidebarFooter";
             pnlSidebarFooter.Padding = new Padding(14, 16, 14, 21);
-            pnlSidebarFooter.Size = new Size(274, 101);
+            pnlSidebarFooter.Size = new Size(310, 101);
             pnlSidebarFooter.TabIndex = 0;
             // 
             // pnlEngineStatusBase
@@ -331,13 +331,13 @@ namespace SmartRoutines.UI.Forms
             pnlEngineStatusBase.Controls.Add(lblEngineSubtitle);
             pnlEngineStatusBase.Controls.Add(lblEngineStatus);
             pnlEngineStatusBase.Controls.Add(pnlEngineDot);
-            pnlEngineStatusBase.CustomizableEdges = customizableEdges22;
+            pnlEngineStatusBase.CustomizableEdges = customizableEdges14;
             pnlEngineStatusBase.Dock = DockStyle.Fill;
             pnlEngineStatusBase.Location = new Point(14, 16);
             pnlEngineStatusBase.Margin = new Padding(3, 4, 3, 4);
             pnlEngineStatusBase.Name = "pnlEngineStatusBase";
-            pnlEngineStatusBase.ShadowDecoration.CustomizableEdges = customizableEdges23;
-            pnlEngineStatusBase.Size = new Size(246, 64);
+            pnlEngineStatusBase.ShadowDecoration.CustomizableEdges = customizableEdges15;
+            pnlEngineStatusBase.Size = new Size(282, 64);
             pnlEngineStatusBase.TabIndex = 0;
             // 
             // lblEngineSubtitle
@@ -364,7 +364,7 @@ namespace SmartRoutines.UI.Forms
             pnlEngineDot.Location = new Point(18, 27);
             pnlEngineDot.Margin = new Padding(3, 4, 3, 4);
             pnlEngineDot.Name = "pnlEngineDot";
-            pnlEngineDot.ShadowDecoration.CustomizableEdges = customizableEdges21;
+            pnlEngineDot.ShadowDecoration.CustomizableEdges = customizableEdges13;
             pnlEngineDot.ShadowDecoration.Mode = Guna.UI2.WinForms.Enums.ShadowMode.Circle;
             pnlEngineDot.Size = new Size(9, 11);
             pnlEngineDot.TabIndex = 0;
@@ -374,11 +374,11 @@ namespace SmartRoutines.UI.Forms
             // 
             pnlMainContent.CustomizableEdges = customizableEdges1;
             pnlMainContent.Dock = DockStyle.Fill;
-            pnlMainContent.Location = new Point(274, 60);
+            pnlMainContent.Location = new Point(310, 60);
             pnlMainContent.Margin = new Padding(3, 4, 3, 4);
             pnlMainContent.Name = "pnlMainContent";
             pnlMainContent.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            pnlMainContent.Size = new Size(1189, 900);
+            pnlMainContent.Size = new Size(1153, 900);
             pnlMainContent.TabIndex = 2;
             // 
             // FrmMain
@@ -395,6 +395,7 @@ namespace SmartRoutines.UI.Forms
             Name = "FrmMain";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Smart Routines";
+            Load += FrmMain_Load;
             pnlHeader.ResumeLayout(false);
             pnlHeader.PerformLayout();
             pnlSidebar.ResumeLayout(false);

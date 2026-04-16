@@ -4,7 +4,7 @@ using System.Windows.Forms;
 using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.UI.Core.Theme;
 
-namespace Project_2.UI.Steps;
+namespace SmartRoutines.UI.Controls.AddRoutine;
 
 public class UC_Step2_Trigger : SmartUserControl
 {
@@ -232,5 +232,17 @@ public class UC_Step2_Trigger : SmartUserControl
 		_fileCfg.Controls.Add(new Label { Text = "Monitor File Path", ForeColor = Color.White, Location = new Point(20, 20), AutoSize = true });
 		_txtFilePath = new TextBox { Width = 300, Location = new Point(20, 50), BackColor = SmartTheme.Background, ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
 		_fileCfg.Controls.Add(_txtFilePath);
+	}
+
+	public string GetTriggerConfigJson()
+	{
+		var config = new SmartRoutines.Core.Domain.Models.TriggerConfiguration 
+		{ 
+			ScheduledTime = _dtpTime.Value,
+			RepeatDays = (SmartRoutines.Core.Domain.Enums.DayOfWeek)_selectedDays,
+			SsidName = _selectedTriggerType == TriggerType.AppLaunched ? _txtAppName.Text : _txtFilePath.Text
+		};
+
+		return System.Text.Json.JsonSerializer.Serialize(config);
 	}
 }

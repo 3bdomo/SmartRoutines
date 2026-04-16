@@ -4,249 +4,335 @@ using System.Reflection;
 using System.Windows.Forms;
 using System.Drawing;
 using SmartRoutines.UI.Core.Theme;
+using SmartRoutines.Core.Interfaces.Logic;
+using System.Collections.Generic;
+using SmartRoutines.Core.DTOs;
+using System.Threading.Tasks;
+using SmartRoutines.UI.Core.Helper;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI.Controls
 {
     public partial class UC_Dashboard : SmartUserControl
     {
-        // Only manages the list of cards — no code-created layout panels
         private System.Collections.Generic.List<UC_RoutineCard> _routineList = null!;
         private int _lastAvailableWidth = 0;
         private System.Windows.Forms.Timer _resizeDebounce = null!;
 
-        public UC_Dashboard()
+        // ── Cached stat values to avoid redundant LINQ on every event ──────
+        private int _cachedTotal, _cachedActive, _cachedRunning, _cachedActions;
+
+        private readonly IRoutineService _routineService;
+
+        public UC_Dashboard(IRoutineService routineService)
         {
+            _routineService = routineService;
             InitializeComponent();
 
+            // Set styles BEFORE anything else — avoids mid-init repaints
             this.SetStyle(
                 ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.UserPaint |
-                ControlStyles.OptimizedDoubleBuffer, true);
+                ControlStyles.OptimizedDoubleBuffer |
+                ControlStyles.ResizeRedraw, true);   // ← added ResizeRedraw
             this.DoubleBuffered = true;
             this.Dock = DockStyle.Fill;
             this.BackColor = SmartTheme.Background;
 
-            InitializeDashboard();
+            // Defer everything until the handle exists → avoids layout before
+            // the control has real pixel dimensions
+            this.HandleCreated += (_, __) => InitializeDashboard();
         }
 
         // ─── Initialization ─────────────────────────────────────────────────
         private void InitializeDashboard()
         {
+            // ── Freeze the entire form hierarchy in ONE call ───────────────
+            var form = this.FindForm();
+            form?.SuspendLayout();
+            this.SuspendLayout();
+
             try
             {
-                this.SuspendLayout();
-
-                // ── Double-buffer all Designer panels ──────────────────────
+                // ── Double-buffer designer panels (reflection, done once) ──
                 EnableDoubleBuffered(tlpStatCards);
                 EnableDoubleBuffered(flpRoutineCards);
 
-                // ── Configure Designer stat cards (no new UC_StatCard created) ──
+                // ── Stat cards ─────────────────────────────────────────────
                 ConfigureStatCards();
 
-                // ── Configure "Your Routines" label ───────────────────────
+                // ── "Your Routines" label ──────────────────────────────────
                 lblYourRoutines.Font = SmartTheme.FontSubheader;
                 lblYourRoutines.ForeColor = SmartTheme.TextPrimary;
                 lblYourRoutines.BackColor = Color.Transparent;
 
-                // ── Configure routine card container ───────────────────────
+                // ── Routine card container ─────────────────────────────────
                 flpRoutineCards.WrapContents = true;
                 flpRoutineCards.AutoScroll = true;
                 flpRoutineCards.Padding = new Padding(20, 4, 20, 20);
                 flpRoutineCards.Margin = new Padding(0);
                 flpRoutineCards.BackColor = SmartTheme.Background;
 
-                // ── Seed data ──────────────────────────────────────────────
+                // ── Build all cards, then add in ONE batch (no layout storms)
                 _routineList = new System.Collections.Generic.List<UC_RoutineCard>();
-                SeedRoutines();
+                _ = ReloadDataAsync(); // Async load from service
 
-                foreach (var card in _routineList)
+                flpRoutineCards.SuspendLayout();
+
+                // AddRange = single Controls.CollectionChanged event
+                var controls = new Control[_routineList.Count];
+                for (int i = 0; i < _routineList.Count; i++)
                 {
+                    var card = _routineList[i];
                     card.Margin = new Padding(0, 0, 10, 10);
-                    card.StateChanged += (s, ev) => RefreshStats();
-                    flpRoutineCards.Controls.Add(card);
+                    card.StateChanged += OnCardStateChanged;
+                    controls[i] = card;
                 }
+                flpRoutineCards.Controls.AddRange(controls);   // ← ONE layout pass
+                flpRoutineCards.ResumeLayout(false);           // false = no immediate recalc
 
-                RefreshStats();
+                // ── Compute stats once (no per-card LINQ during load) ──────
+                RecalculateCachedStats();
+                PushStatsToCards();
 
                 // ── Debounced resize ───────────────────────────────────────
                 _resizeDebounce = new System.Windows.Forms.Timer { Interval = 150 };
-                _resizeDebounce.Tick += (s, e) =>
-                {
-                    _resizeDebounce.Stop();
-                    AdjustCardWidthsAndGrid();
-                };
+                _resizeDebounce.Tick += (_, __) => { _resizeDebounce.Stop(); AdjustCardWidthsAndGrid(); };
                 flpRoutineCards.SizeChanged += OnDeferredResize;
                 this.SizeChanged += OnDeferredResize;
-
-                AdjustCardWidthsAndGrid();
-                this.ResumeLayout(true);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Dashboard load error: " + ex.Message);
             }
+            finally
+            {
+                // Always resume — even if something threw
+                this.ResumeLayout(true);
+                form?.ResumeLayout(true);
+
+                // Layout is stable now — safe to measure real widths
+                AdjustCardWidthsAndGrid();
+            }
         }
 
-        // ─── Stat Card Configuration ────────────────────────────────────────
+        // ─── Stat Card Configuration ─────────────────────────────────────────
         private void ConfigureStatCards()
         {
-            // Colors match Figma reference image exactly
             var cards = new[] { statCard1, statCard2, statCard3, statCard4 };
 
-            var accents = new[]
+            var accentColors = new[]
             {
-                Color.FromArgb(59, 130, 246),
-                Color.FromArgb(34, 197, 94),
-                Color.FromArgb(139, 92, 246),
-                Color.FromArgb(243, 156, 18)
-            };
+        Color.FromArgb(59,  130, 246),
+        Color.FromArgb(34,  197, 94 ),
+        Color.FromArgb(139, 92,  246),
+        Color.FromArgb(243, 156, 18 )
+    };
+
             var bgs = new[]
             {
-                Color.FromArgb(15, 23, 42),
-                Color.FromArgb(15, 28, 20),
-                Color.FromArgb(24, 18, 43),
-                Color.FromArgb(30, 20, 10)
-            };
+        Color.FromArgb(15,  23,  42),
+        Color.FromArgb(15,  28,  20),
+        Color.FromArgb(24,  18,  43),
+        Color.FromArgb(30,  20,  10)
+    };
+
             var titles = new[] { "Total Routines", "Active Routines", "Running Now", "Total Actions" };
-            var icons  = new[] { "dashboard.png", "success.png", "activity.png", "add.png" };
+            var icons = new[] { "dashboard.png", "success.png", "activity.png", "add.png" };
 
             for (int i = 0; i < 4; i++)
             {
-                cards[i].AccentColor  = accents[i];
-                cards[i].CardColor    = bgs[i];
-                cards[i].Title        = titles[i];
-                cards[i].CardIcon     = icons[i];
-                cards[i].Value        = "0";
+                cards[i].AccentColor = accentColors[i];
+                cards[i].CardColor = bgs[i];
+                cards[i].Title = titles[i];
+                cards[i].CardIcon = icons[i];
+                cards[i].Value = "0";
                 cards[i].BorderRadius = 20;
-                // Dock.Fill already set in Designer; Margin set there too (6px uniform)
             }
         }
 
         // ─── Seed sample data ────────────────────────────────────────────────
-        private void SeedRoutines()
+        public async Task ReloadDataAsync()
         {
-            var data = new[]
+            try
             {
-                ("Morning Setup",    "Launches email, calendar, and sets volume",
-                 "Every Mon, Tue, Wed, Thu, Fri at 08:00", "2 actions configured", "✔ Last run: 4:54:00 PM",  true,  false),
-                ("Focus Mode",       "Silences notifications and closes distracting apps",
-                 "When code.exe launches",                  "2 actions configured", "✔ Last run: 5:54:00 PM",  true,  true),
-                ("Evening Shutdown", "Closes all work apps and backs up files",
-                 "Every Mon, Tue, Wed, Thu, Fri at 18:00", "1 action configured",  "✖ Last run: 5:54:00 PM",  false, false),
-                ("System Scan",      "Background maintenance operation",
-                 "Every Sunday",                            "3 actions configured", "Never",                    false, false)
-            };
+                var cards = await _routineService.GetAllCardsAsync();
+                
+                this.InvokeIfRequired(() => {
+                    flpRoutineCards.SuspendLayout();
+                    flpRoutineCards.Controls.Clear();
+                    _routineList.Clear();
 
-            foreach (var (name, desc, sched, actions, lastRun, active, running) in data)
+                    foreach (var cardDto in cards)
+                    {
+                        var card = new UC_RoutineCard
+                        {
+                            Id = cardDto.Id,
+                            RoutineName = cardDto.Name,
+                            Description = cardDto.Description,
+                            ScheduleText = cardDto.TriggerSummary,
+                            ActionCountText = $"{cardDto.ActionCount} actions configured",
+                            LastRunText = string.IsNullOrEmpty(cardDto.LastRunRelativeTime) ? "Never run" : $"Last run: {cardDto.LastRunRelativeTime}",
+                            IsActive = cardDto.IsActive,
+                            IsRunning = cardDto.IsRunningNow,
+                            Margin = new Padding(0, 0, 10, 10)
+                        };
+
+                        card.StateChanged += OnCardStateChanged;
+                        card.DeleteRequested += async (s, e) =>
+                        {
+                            if (s is UC_RoutineCard c)
+                                await OnCardDeleteRequestedAsync(c);
+                        };
+                        _routineList.Add(card);
+                        flpRoutineCards.Controls.Add(card);
+                    }
+
+                    flpRoutineCards.ResumeLayout(true);
+                    RecalculateCachedStats();
+                    PushStatsToCards();
+                    AdjustCardWidthsAndGrid();
+                });
+            }
+            catch (Exception ex)
             {
-                var card = new UC_RoutineCard
-                {
-                    RoutineName     = name,
-                    Description     = desc,
-                    ScheduleText    = sched,
-                    ActionCountText = actions,
-                    LastRunText     = lastRun,
-                    IsActive        = active,
-                    IsRunning       = running
-                };
-                _routineList.Add(card);
+                MessageBox.Show("Error loading routines: " + ex.Message);
             }
         }
 
         // ─── Public API ──────────────────────────────────────────────────────
-        public void AddNewRoutine()
+        public void AddNewRoutine(string name, string description)
         {
             var card = new UC_RoutineCard
             {
-                RoutineName     = "New Routine",
-                Description     = "Custom automation sequence",
-                ScheduleText    = "Manually triggered",
+                RoutineName = name,
+                Description = description,
+                ScheduleText = "Manual trigger",
                 ActionCountText = "0 actions configured",
-                LastRunText     = "Never run",
-                IsActive        = true,
-                IsRunning       = false,
-                Margin          = new Padding(0, 0, 10, 10)
+                LastRunText = "Never run",
+                IsActive = true,
+                IsRunning = false,
+                Margin = new Padding(0, 0, 10, 10)
             };
-            card.StateChanged += (s, ev) => RefreshStats();
+            card.StateChanged += OnCardStateChanged;
             _routineList.Add(card);
+
+            // Add single card without touching the whole layout
+            flpRoutineCards.SuspendLayout();
             flpRoutineCards.Controls.Add(card);
-            RefreshStats();
+            flpRoutineCards.ResumeLayout(false);   // ← false keeps it lazy
+
+            // Invalidate cache incrementally — no full LINQ scan
+            _cachedTotal++;
+            if (card.IsActive) _cachedActive++;
+            if (card.IsRunning) _cachedRunning++;
+            PushStatsToCards();
+
             AdjustCardWidthsAndGrid();
         }
 
-        // ─── Stats refresh ───────────────────────────────────────────────────
-        private void RefreshStats()
+        // ─── Card event handlers ──────────────────────────────────────────────
+        private async Task OnCardDeleteRequestedAsync(UC_RoutineCard card)
         {
-            if (_routineList == null) return;
+            var result = MessageBox.Show(
+                $"Are you sure you want to delete \"{card.RoutineName}\"?",
+                "Delete Routine",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
 
-            statCard1.Value = _routineList.Count.ToString();
-            statCard2.Value = _routineList.Count(x => x.IsActive).ToString();
-            statCard3.Value = _routineList.Count(x => x.IsRunning).ToString();
-            statCard4.Value = _routineList.Sum(x =>
-                int.TryParse(x.ActionCountText.Split(' ')[0], out int n) ? n : 0).ToString();
+            if (result != DialogResult.Yes) return;
+
+            try
+            {
+                await _routineService.DeleteAsync(card.Id);
+
+                this.InvokeIfRequired(() =>
+                {
+                    flpRoutineCards.SuspendLayout();
+                    flpRoutineCards.Controls.Remove(card);
+                    _routineList.Remove(card);
+                    flpRoutineCards.ResumeLayout(true);
+
+                    RecalculateCachedStats();
+                    PushStatsToCards();
+                    AdjustCardWidthsAndGrid();
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting routine: " + ex.Message);
+            }
         }
 
-        // ─── Debounced resize handler ────────────────────────────────────────
+        // ─── Cached stats (avoid LINQ on every event) ────────────────────────
+        private void RecalculateCachedStats()
+        {
+            _cachedTotal = _routineList.Count;
+            _cachedActive = 0;
+            _cachedRunning = 0;
+            _cachedActions = 0;
+
+            // Single pass — no multiple LINQ iterations
+            foreach (var c in _routineList)
+            {
+                if (c.IsActive) _cachedActive++;
+                if (c.IsRunning) _cachedRunning++;
+                _cachedActions += int.TryParse(
+                    c.ActionCountText.Split(' ')[0], out int n) ? n : 0;
+            }
+        }
+
+        private void PushStatsToCards()
+        {
+            statCard1.Value = _cachedTotal.ToString();
+            statCard2.Value = _cachedActive.ToString();
+            statCard3.Value = _cachedRunning.ToString();
+            statCard4.Value = _cachedActions.ToString();
+        }
+
+        // ─── StateChanged handler (replaces inline lambda) ───────────────────
+        private async void OnCardStateChanged(object? sender, EventArgs e)
+        {
+            if (sender is UC_RoutineCard card)
+            {
+                try 
+                {
+                    await _routineService.ToggleStatusAsync(card.Id);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error updating routine status: " + ex.Message);
+                }
+            }
+
+            RecalculateCachedStats();
+            PushStatsToCards();
+        }
+
+        // ─── Debounced resize ────────────────────────────────────────────────
         private void OnDeferredResize(object? sender, EventArgs e)
         {
             _resizeDebounce.Stop();
             _resizeDebounce.Start();
         }
 
-        // ─── Responsive layout: cards + stat grid breakpoint ────────────────
+        // ─── Responsive layout ───────────────────────────────────────────────
         public void AdjustCardWidthsAndGrid()
         {
             if (_routineList == null || _routineList.Count == 0) return;
             if (this.IsDisposed) return;
 
-            // ── Stat grid: 2×2 below 850px, 4×1 above ─────────────────────
+            // ── Stat grid breakpoint ───────────────────────────────────────
             int formWidth = this.FindForm()?.Width ?? this.Width;
-            if (formWidth < 850)
+            bool wantTwoCols = formWidth < 850;
+
+            if (wantTwoCols && tlpStatCards.ColumnCount != 2)
             {
-                // 2-column × 2-row grid
-                if (tlpStatCards.ColumnCount != 2)
-                {
-                    tlpStatCards.SuspendLayout();
-                    tlpStatCards.ColumnCount = 2;
-                    tlpStatCards.RowCount = 2;
-                    tlpStatCards.ColumnStyles.Clear();
-                    tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-                    tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-                    tlpStatCards.RowStyles.Clear();
-                    tlpStatCards.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
-                    tlpStatCards.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
-                    // Re-position cards for 2×2
-                    tlpStatCards.SetCellPosition(statCard1, new TableLayoutPanelCellPosition(0, 0));
-                    tlpStatCards.SetCellPosition(statCard2, new TableLayoutPanelCellPosition(1, 0));
-                    tlpStatCards.SetCellPosition(statCard3, new TableLayoutPanelCellPosition(0, 1));
-                    tlpStatCards.SetCellPosition(statCard4, new TableLayoutPanelCellPosition(1, 1));
-                    tlpStatCards.Height = 260; // taller for 2-row
-                    tlpStatCards.ResumeLayout(true);
-                }
+                ApplyStatGrid(2, 2, 260);
             }
-            else
+            else if (!wantTwoCols && tlpStatCards.ColumnCount != 4)
             {
-                // 4-column × 1-row grid
-                if (tlpStatCards.ColumnCount != 4)
-                {
-                    tlpStatCards.SuspendLayout();
-                    tlpStatCards.ColumnCount = 4;
-                    tlpStatCards.RowCount = 1;
-                    tlpStatCards.ColumnStyles.Clear();
-                    tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
-                    tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
-                    tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
-                    tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
-                    tlpStatCards.RowStyles.Clear();
-                    tlpStatCards.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-                    // Re-position cards for 4×1
-                    tlpStatCards.SetCellPosition(statCard1, new TableLayoutPanelCellPosition(0, 0));
-                    tlpStatCards.SetCellPosition(statCard2, new TableLayoutPanelCellPosition(1, 0));
-                    tlpStatCards.SetCellPosition(statCard3, new TableLayoutPanelCellPosition(2, 0));
-                    tlpStatCards.SetCellPosition(statCard4, new TableLayoutPanelCellPosition(3, 0));
-                    tlpStatCards.Height = 148;
-                    tlpStatCards.ResumeLayout(true);
-                }
+                ApplyStatGrid(4, 1, 148);
             }
 
             // ── Routine card widths ────────────────────────────────────────
@@ -260,31 +346,53 @@ namespace SmartRoutines.UI.Controls
             int cols;
             float scaleFactor;
 
-            if (available < 620)       { cols = 1; scaleFactor = 0.85f; }
+            if (available < 620) { cols = 1; scaleFactor = 0.85f; }
             else if (available < 1000) { cols = 2; scaleFactor = 0.92f; }
-            else                       { cols = 3; scaleFactor = 1.0f;  }
+            else { cols = 3; scaleFactor = 1.0f; }
 
-            // Card margin horizontal contribution from Padding(0,0,10,10)
             const int cardMarginH = 10;
-            int targetWidth = (available / cols) - cardMarginH - 2;
-            targetWidth = Math.Max(240, targetWidth);
+            int targetWidth = Math.Max(240, (available / cols) - cardMarginH - 2);
 
+            // ── Batch card resizes in one suspended block ──────────────────
             flpRoutineCards.SuspendLayout();
             foreach (Control c in flpRoutineCards.Controls)
             {
-                if (c is UC_RoutineCard card)
+                if (c is UC_RoutineCard card && card.Width != targetWidth)
                 {
-                    if (card.Width != targetWidth)
-                    {
-                        card.Width = targetWidth;
-                        card.ScaleUI(scaleFactor);
-                    }
+                    card.Width = targetWidth;
+                    card.ScaleUI(scaleFactor);
                 }
             }
             flpRoutineCards.ResumeLayout(true);
         }
 
-        // Keep public alias for FrmMain.DisplayPage callback
+        // Extracted helper — removes duplicated tlpStatCards wiring ──────────
+        private void ApplyStatGrid(int cols, int rows, int height)
+        {
+            tlpStatCards.SuspendLayout();
+            tlpStatCards.ColumnCount = cols;
+            tlpStatCards.RowCount = rows;
+
+            tlpStatCards.ColumnStyles.Clear();
+            float pct = 100f / cols;
+            for (int i = 0; i < cols; i++)
+                tlpStatCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, pct));
+
+            tlpStatCards.RowStyles.Clear();
+            float rowPct = 100f / rows;
+            for (int i = 0; i < rows; i++)
+                tlpStatCards.RowStyles.Add(new RowStyle(SizeType.Percent, rowPct));
+
+            // Re-seat the 4 stat cards
+            var cards = new[] { statCard1, statCard2, statCard3, statCard4 };
+            for (int i = 0; i < 4; i++)
+                tlpStatCards.SetCellPosition(cards[i],
+                    new TableLayoutPanelCellPosition(i % cols, i / cols));
+
+            tlpStatCards.Height = height;
+            tlpStatCards.ResumeLayout(true);
+        }
+
         public void AdjustCardWidths() => AdjustCardWidthsAndGrid();
 
         // ─── Helper ──────────────────────────────────────────────────────────

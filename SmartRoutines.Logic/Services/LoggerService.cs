@@ -22,7 +22,7 @@ public sealed class LoggerService : IActivityLogService
     public event EventHandler? OnLogsCleared;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LoggerService"/> class.
+    /// Initializes a new instance of <see cref="LoggerService"/>.
     /// </summary>
     public LoggerService(IUnitOfWork unitOfWork)
     {
@@ -103,6 +103,8 @@ public sealed class LoggerService : IActivityLogService
         return dateTime.ToString("yyyy-MM-dd");
     }
 
+    // ── Internal legacy helper (kept for any callers not yet migrated) ───────
+
     /// <summary>
     /// Legacy helper used elsewhere for recording action results (keeps existing behaviour).
     /// It uses the UnitOfWork already so no changes required here.
@@ -112,9 +114,15 @@ public sealed class LoggerService : IActivityLogService
         if (action is null) throw new ArgumentNullException(nameof(action));
         if (context is null) throw new ArgumentNullException(nameof(context));
 
-        var routineName = string.IsNullOrWhiteSpace(context.RoutineName) ? "Unnamed Routine" : context.RoutineName;
+        var routineName = string.IsNullOrWhiteSpace(context.RoutineName)
+            ? "Unnamed Routine"
+            : context.RoutineName;
+
         var details = $"[{action.Type}] {message}";
-        var log = new ActivityLog(action.RoutineId, routineName, status, details);
+
+        // ActivityLog still uses a Guid for the routine reference; default used here
+        // because RuntimeAction intentionally carries no DB identity.
+        var log = new ActivityLog(Guid.Empty, routineName, status, details);
 
         await _unitOfWork.ActivityLogs.AddAsync(log);
         await _unitOfWork.SaveChangesAsync();
@@ -133,4 +141,3 @@ public sealed class LoggerService : IActivityLogService
         OnLogAdded?.Invoke(this, new ActivityLogEventArgs(dto));
     }
 }
-
