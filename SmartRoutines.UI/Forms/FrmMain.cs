@@ -34,7 +34,7 @@ namespace SmartRoutines.UI.Forms
         private Label _lblContentSubtitle = null!;
         
         // Page caching to eliminate 5-10s load times
-        private readonly System.Collections.Generic.Dictionary<Type, UserControl> _pageCache = new();
+        private readonly Dictionary<Type, UserControl> _pageCache = new();
 
         private readonly IServiceProvider _serviceProvider;
         // Only reload dashboard data after a routine is saved — not on every navigation
@@ -200,10 +200,10 @@ namespace SmartRoutines.UI.Forms
         // ─── Background page warm-up ───────────────────────────────────────
         // Creates each page on the UI thread (WinForms requires it) but defers
         // the work to after the window has painted its first frame.
-        private async System.Threading.Tasks.Task WarmUpPagesAsync()
+        private async Task WarmUpPagesAsync()
         {
             // Yield so the first frame renders fully before we start constructing pages.
-            await System.Threading.Tasks.Task.Delay(300);
+            await Task.Delay(300);
 
             if (this.IsDisposed) return;
 

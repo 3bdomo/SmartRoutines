@@ -14,7 +14,7 @@ namespace SmartRoutines.UI.Controls
 {
     public partial class UC_Dashboard : SmartUserControl
     {
-        private System.Collections.Generic.List<UC_RoutineCard> _routineList = null!;
+        private List<UC_RoutineCard> _routineList = null!;
         private int _lastAvailableWidth = 0;
         private System.Windows.Forms.Timer _resizeDebounce = null!;
 
@@ -73,7 +73,7 @@ namespace SmartRoutines.UI.Controls
                 flpRoutineCards.BackColor = SmartTheme.Background;
 
                 // ── Build all cards, then add in ONE batch (no layout storms)
-                _routineList = new System.Collections.Generic.List<UC_RoutineCard>();
+                _routineList = new List<UC_RoutineCard>();
                 _ = ReloadDataAsync(); // Async load from service
 
                 flpRoutineCards.SuspendLayout();

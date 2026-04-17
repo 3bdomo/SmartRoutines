@@ -9,15 +9,15 @@ namespace SmartRoutines.UI.Controls.Common
 {
     public partial class UC_Toast : SmartUserControl
     {
-        private readonly System.Windows.Forms.Timer _timer;
-        private int _displayTime = 3000; // 3 seconds
+        private readonly Timer _timer;
+        private int _displayTime = 5000; // 5 seconds
 
         public UC_Toast(string message)
         {
             InitializeComponent();
             SetupUI(message);
 
-            _timer = new System.Windows.Forms.Timer { Interval = _displayTime };
+            _timer = new Timer { Interval = _displayTime };
             _timer.Tick += (s, e) => {
                 _timer.Stop();
                 FadeOutAndClose();
