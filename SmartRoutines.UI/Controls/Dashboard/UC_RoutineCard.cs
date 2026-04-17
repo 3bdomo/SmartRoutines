@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI.Controls
 {

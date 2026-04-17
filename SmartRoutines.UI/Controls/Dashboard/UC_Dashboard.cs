@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using SmartRoutines.Core.DTOs;
 using System.Threading.Tasks;
 using SmartRoutines.UI.Core.Helper;
+using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 
 namespace SmartRoutines.UI.Controls
 {

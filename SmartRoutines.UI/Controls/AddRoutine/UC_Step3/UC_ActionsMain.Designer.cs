@@ -3,7 +3,7 @@ using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 {
-    partial class UC_ActionsMain
+    partial class UC_ActionsMain : SmartUserControl
     {
         /// <summary> 
         /// Required designer variable.
