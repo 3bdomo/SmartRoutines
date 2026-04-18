@@ -222,7 +222,8 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                         // Re-configure only if JSON changed
                         if (!_triggerConfig.TryGetValue(r.Id, out var old) || old != cfg)
                         {
-                            try { existing.Configure(cfg); _triggerConfig[r.Id] = cfg; } catch (Exception ex) { _liveLogger.LogError($"Failed to configure trigger for {r.Name}", ex); }
+                            try { existing.Configure(cfg); _triggerConfig[r.Id] = cfg; }
+                            catch (Exception ex) { _liveLogger.LogError($"Failed to configure trigger for {r.Name}", ex); }
                         }
                     }
                     else
@@ -230,7 +231,8 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                         var trig = TriggerFactory.Create(r.TriggerType);
                         if (trig != null)
                         {
-                            try { trig.Configure(cfg); _triggerCache[r.Id] = trig; _triggerConfig[r.Id] = cfg; } catch (Exception ex) { _liveLogger.LogError($"Failed to create/config trigger for {r.Name}", ex); }
+                            try { trig.Configure(cfg); _triggerCache[r.Id] = trig; _triggerConfig[r.Id] = cfg; }
+                            catch (Exception ex) { _liveLogger.LogError($"Failed to create/config trigger for {r.Name}", ex); }
                         }
                     }
                 }

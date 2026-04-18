@@ -846,7 +846,7 @@ namespace SmartRoutines.UI.Forms
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
-            _engine.StartAsync();
+            //_engine.StartAsync();
         }
 
         protected override CreateParams CreateParams

@@ -1,9 +1,9 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Data;
 using SmartRoutines.Logic;
-using SmartRoutines.Logic.Services;
 using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
 using SmartRoutines.UI.Forms;
@@ -18,18 +18,17 @@ namespace SmartRoutines.UI
         [STAThread]
         static void Main()
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
+
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    // Register services and dependencies here
-                    services.AddDataServices(context.Configuration);
+                    var connectionString = context.Configuration.GetConnectionString("DefaultConnection");
 
-                    // Logic layer registrations (action executors, engine, loggers)
+                    services.AddDataServices(connectionString);
                     services.AddLogicServices();
-
-                    // Logic Services (domain services)
-                    services.AddScoped<IRoutineService, RoutineService>();
-                    services.AddScoped<IDashboardService, DashboardService>();
 
                     // Forms & Pages
                     services.AddTransient<FrmMain>();
@@ -39,12 +38,16 @@ namespace SmartRoutines.UI
                 })
                 .Build();
 
-            //Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
+            var engine = host.Services.GetRequiredService<IAutomationEngine>();
+            _ = engine.StartAsync();
 
-            var mainForm = host.Services.GetRequiredService<FrmMain>();
-            Application.Run(mainForm);
+            using (var scope = host.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var mainForm = services.GetRequiredService<FrmMain>();
+                Application.Run(mainForm);
+                engine.StopAsync();
+            }
         }
     }
 }
