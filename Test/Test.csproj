@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Project references to core libraries under test -->
+    <ProjectReference Include="..\SmartRoutines.Core\SmartRoutines.Core.csproj" />
+    <ProjectReference Include="..\SmartRoutines.Data\SmartRoutines.Data.csproj" />
+    <ProjectReference Include="..\SmartRoutines.Logic\SmartRoutines.Logic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test/runtime dependencies -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
