@@ -22,6 +22,7 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 
         private readonly IRoutineService _routineService;
         private int _currentStep = 1;
+        private bool _isSaving;
 
         public UC_ActionsMain(IRoutineService routineService)
         {
@@ -138,6 +139,11 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 
         private async void FinishWizard()
         {
+            if (_isSaving) return;
+
+            _isSaving = true;
+            _btnNext.Enabled = false;
+
             string name = _step1.RoutineName;
             string desc = _step1.Description;
 
@@ -155,21 +161,36 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
             {
                 await _routineService.SaveAsync(dto);
 
-                if (this.ParentForm is SmartRoutines.UI.Forms.FrmMain main)
+                var hostForm = this.FindForm();
+                var main = hostForm as SmartRoutines.UI.Forms.FrmMain
+                           ?? hostForm?.Owner as SmartRoutines.UI.Forms.FrmMain;
+
+                if (main != null)
                 {
-                    // 1. Show success toast
                     main.ShowToast($"Routine '{name}' created successfully");
-
-                    // 2. Signal the dashboard to reload data on next navigation
                     main.RequestDashboardRefresh();
-
-                    // 3. Go home
                     main.DisplayPage<UC_Dashboard>();
+                }
+
+                // Close only the popup/container form hosting this control.
+                if (hostForm != null && hostForm is not SmartRoutines.UI.Forms.FrmMain)
+                {
+                    if (hostForm.Modal)
+                        hostForm.DialogResult = DialogResult.OK;
+
+                    hostForm.Close();
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error saving routine: " + ex.Message);
+            }
+            finally
+            {
+                if (!IsDisposed && _btnNext != null && !_btnNext.IsDisposed)
+                    _btnNext.Enabled = true;
+
+                _isSaving = false;
             }
         }
 

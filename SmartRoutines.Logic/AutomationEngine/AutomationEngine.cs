@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Domain.Models;
 using SmartRoutines.Core.DTOs;
@@ -20,9 +21,7 @@ namespace SmartRoutines.Logic.AutomationEngine;
 /// </summary>
 public sealed class AutomationEngine : IAutomationEngine, IDisposable
 {
-    private readonly IUnitOfWork _uow;
     private readonly ILiveLogger _liveLogger;
-    private readonly IActivityLogService _logService;
     private readonly CancellationTokenSource _cts = new();
 
     // Trigger cache: keep long-lived trigger instances in memory keyed by Routine.Id
@@ -44,11 +43,9 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
 
     private readonly IServiceScopeFactory _scopeFactory;
 
-    public AutomationEngine(IUnitOfWork uow, ILiveLogger liveLogger, IActivityLogService logService, IServiceScopeFactory scopeFactory)
+    public AutomationEngine(ILiveLogger liveLogger, IServiceScopeFactory scopeFactory)
     {
-        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
         _liveLogger = liveLogger ?? throw new ArgumentNullException(nameof(liveLogger));
-        _logService = logService ?? throw new ArgumentNullException(nameof(logService));
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
 
         // Forward live logger emissions into engine events for UI subscription
@@ -88,12 +85,6 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
     /// <inheritdoc />
     public async Task ExecuteManualAsync(Guid routineId)
     {
-        var entity = await _uow.Routines.GetByIdWithActionsAsync(routineId);
-        if (entity == null) throw new RoutineNotFoundException(routineId);
-
-        var runtime = new RuntimeRoutine(entity.Id, entity.Name, entity.TriggerType, entity.TriggerConfig,
-            entity.Actions.OrderBy(a => a.ExecutionOrder).Select(a => new RuntimeAction(a.Type, a.Arguments, a.ExecutionOrder)));
-
         // Use RunRoutineNowAsync to centralize manual execution logic
         await RunRoutineNowAsync(routineId).ConfigureAwait(false);
     }
@@ -103,13 +94,13 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
     /// </summary>
     public async Task RunRoutineNowAsync(Guid routineId)
     {
-        var entity = await _uow.Routines.GetByIdWithActionsAsync(routineId);
-        if (entity == null) throw new RoutineNotFoundException(routineId);
+        var runtime = await GetRuntimeRoutineByIdAsync(routineId).ConfigureAwait(false);
+        if (runtime == null) throw new RoutineNotFoundException(routineId);
 
         // Prevent double-run
         if (_runningCts.ContainsKey(routineId))
         {
-            _liveLogger.LogWarning($"Routine {entity.Name} is already running.");
+            _liveLogger.LogWarning($"Routine {runtime.Name} is already running.");
             return;
         }
 
@@ -117,7 +108,7 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
         if (!_runningCts.TryAdd(routineId, perRunCts))
         {
             perRunCts.Dispose();
-            _liveLogger.LogWarning($"Failed to start manual run for {entity.Name} (already running).");
+            _liveLogger.LogWarning($"Failed to start manual run for {runtime.Name} (already running).");
             return;
         }
 
@@ -132,10 +123,7 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
             Exception? error = null;
             try
             {
-                _liveLogger.LogInfo($"Manual execution started: {entity.Name}");
-
-                var runtime = new RuntimeRoutine(entity.Id, entity.Name, entity.TriggerType, entity.TriggerConfig,
-                    entity.Actions.OrderBy(a => a.ExecutionOrder).Select(a => new RuntimeAction(a.Type, a.Arguments, a.ExecutionOrder)));
+                _liveLogger.LogInfo($"Manual execution started: {runtime.Name}");
 
                 using var scope = _scopeFactory.CreateScope();
                 var runner = scope.ServiceProvider.GetRequiredService<ActionRunner>();
@@ -147,24 +135,24 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
             {
                 status = LogStatus.Warning;
                 message = "Manual execution cancelled.";
-                _liveLogger.LogWarning($"Manual run cancelled for {entity.Name}");
+                _liveLogger.LogWarning($"Manual run cancelled for {runtime.Name}");
             }
             catch (Exception ex)
             {
                 status = LogStatus.Error;
                 message = ex.Message;
                 error = ex;
-                _liveLogger.LogError($"Manual execution failed for {entity.Name}", ex);
+                _liveLogger.LogError($"Manual execution failed for {runtime.Name}", ex);
             }
             finally
             {
                 sw.Stop();
                 try
                 {
-                    await _logService.AddLogAsync(new ActivityLogDto
+                    await PersistLogAsync(new ActivityLogDto
                     {
-                        Id = Guid.NewGuid(),
-                        RoutineName = entity.Name,
+                        Id = runtime.Id,
+                        RoutineName = runtime.Name,
                         Status = status,
                         Message = message,
                         ExecutedAt = DateTime.UtcNow,
@@ -208,7 +196,7 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
         {
             try
             {
-                var active = await _uow.Routines.GetActiveNotDeletedWithActionsAsync();
+                var active = await GetActiveRuntimeRoutinesAsync().ConfigureAwait(false);
                 _liveLogger.LogInfo($"Engine monitoring {active.Count()} routines");
 
                 var activeSet = active.Select(r => r.Id).ToHashSet();
@@ -222,15 +210,17 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                         // Re-configure only if JSON changed
                         if (!_triggerConfig.TryGetValue(r.Id, out var old) || old != cfg)
                         {
-                            try { existing.Configure(cfg); _triggerConfig[r.Id] = cfg; } catch (Exception ex) { _liveLogger.LogError($"Failed to configure trigger for {r.Name}", ex); }
+                            try { existing.Configure(cfg); _triggerConfig[r.Id] = cfg; }
+                            catch (Exception ex) { _liveLogger.LogError($"Failed to configure trigger for {r.Name}", ex); }
                         }
                     }
                     else
                     {
-                        var trig = TriggerFactory.Create(r.TriggerType);
+                        var trig = TriggerFactory.Create(r.Type);
                         if (trig != null)
                         {
-                            try { trig.Configure(cfg); _triggerCache[r.Id] = trig; _triggerConfig[r.Id] = cfg; } catch (Exception ex) { _liveLogger.LogError($"Failed to create/config trigger for {r.Name}", ex); }
+                            try { trig.Configure(cfg); _triggerCache[r.Id] = trig; _triggerConfig[r.Id] = cfg; }
+                            catch (Exception ex) { _liveLogger.LogError($"Failed to create/config trigger for {r.Name}", ex); }
                         }
                     }
                 }
@@ -283,17 +273,14 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                                 trigger.OnFired();
                                 _liveLogger.LogInfo($"Trigger fired for routine {r.Name}");
 
-                                var runtime = new RuntimeRoutine(r.Id, r.Name, r.TriggerType, r.TriggerConfig,
-                                    r.Actions.OrderBy(a => a.ExecutionOrder).Select(a => new RuntimeAction(a.Type, a.Arguments, a.ExecutionOrder)));
-
                                 // Execute via ActionRunner resolved from a scope to obtain transient IAction implementations
                                 try
                                 {
                                     using var scope = _scopeFactory.CreateScope();
                                     var runner = scope.ServiceProvider.GetRequiredService<ActionRunner>();
-                                    var ctx = new ActionContext { RoutineName = runtime.Name, TriggerTime = DateTime.UtcNow, TriggerData = new Dictionary<string, object?>(), IsManualTrigger = false };
-                                    await runner.RunAsync(runtime.Actions, ctx, perRunCts.Token).ConfigureAwait(false);
-                                    message = $"Executed {runtime.Actions.Count} actions.";
+                                    var ctx = new ActionContext { RoutineName = r.Name, TriggerTime = DateTime.UtcNow, TriggerData = new Dictionary<string, object?>(), IsManualTrigger = false };
+                                    await runner.RunAsync(r.Actions, ctx, perRunCts.Token).ConfigureAwait(false);
+                                    message = $"Executed {r.Actions.Count} actions.";
                                 }
                                 catch (OperationCanceledException)
                                 {
@@ -315,9 +302,9 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                             sw.Stop();
                             try
                             {
-                                await _logService.AddLogAsync(new ActivityLogDto
+                                await PersistLogAsync(new ActivityLogDto
                                 {
-                                    Id = Guid.NewGuid(),
+                                    Id = r.Id,
                                     RoutineName = r.Name,
                                     Status = status,
                                     Message = message,
@@ -354,6 +341,40 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
     }
 
     private void OnLogEmitted(ActivityLogDto dto) => LogEmitted?.Invoke(this, new LogEmittedEventArgs(dto));
+
+    private async Task<IReadOnlyList<RuntimeRoutine>> GetActiveRuntimeRoutinesAsync()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var entities = await uow.Routines.GetActiveNotDeletedWithActionsAsync().ConfigureAwait(false);
+        return entities.Select(MapToRuntimeRoutine).ToList();
+    }
+
+    private async Task<RuntimeRoutine?> GetRuntimeRoutineByIdAsync(Guid routineId)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var entity = await uow.Routines.GetByIdWithActionsAsync(routineId).ConfigureAwait(false);
+        return entity == null ? null : MapToRuntimeRoutine(entity);
+    }
+
+    private async Task PersistLogAsync(ActivityLogDto dto)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var logService = scope.ServiceProvider.GetRequiredService<IActivityLogService>();
+        await logService.AddLogAsync(dto).ConfigureAwait(false);
+    }
+
+    private static RuntimeRoutine MapToRuntimeRoutine(Routine entity)
+    {
+        return new RuntimeRoutine(
+            entity.Id,
+            entity.Name,
+            entity.TriggerType,
+            entity.TriggerConfig,
+            entity.Actions.OrderBy(a => a.ExecutionOrder)
+                .Select(a => new RuntimeAction(a.Type, a.Arguments, a.ExecutionOrder)));
+    }
 
     public void Dispose()
     {

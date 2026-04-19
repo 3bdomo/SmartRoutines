@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SmartRoutines.Core.Interfaces.Data;
 using SmartRoutines.Data.Context;
@@ -19,15 +18,11 @@ namespace SmartRoutines.Data
         /// <param name="services">The service collection to configure.</param>
         /// <param name="configuration">Application configuration to read the connection string from.</param>
         /// <returns>The configured service collection.</returns>
-        public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddDataServices(this IServiceCollection services, string? connectionString)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
-            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrWhiteSpace(connectionString))
+            if (string.IsNullOrEmpty(connectionString))
             {
-                throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured. Please add it to your appsettings.json.");
+                throw new InvalidOperationException("Connection string not found.");
             }
 
             services.AddDbContext<SmartRoutinesDbContext>(options =>
