@@ -133,7 +133,7 @@ public sealed class ActionRunner
             $"[{context.RoutineName}] Pipeline completed — all steps processed.");
     }
 
-    // ── Action map builder ───────────────────────────────────────────────────
+    // Action map builder 
 
     private static IReadOnlyDictionary<ActionType, IAction> BuildActionMap(IEnumerable<IAction> actions)
     {

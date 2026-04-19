@@ -384,7 +384,25 @@ namespace SmartRoutines.UI.Forms
         // ─── Create New Routine button (FIX: was referenced but never defined) ─
         private void btnCreateNew_Click(object sender, EventArgs e)
         {
-            DisplayPage<UC_ActionsMain>();
+            OpenActionsMainInNewForm();
+        }
+
+        private void OpenActionsMainInNewForm()
+        {
+            var form = new Form
+            {
+                Text = "Create New Routine",
+                StartPosition = FormStartPosition.CenterParent,
+                Size = new Size(1100, 900),
+                MinimumSize = new Size(900, 600),
+                BackColor = SmartTheme.Background
+            };
+
+            var actionsMain = _serviceProvider.GetRequiredService<UC_ActionsMain>();
+            actionsMain.Dock = DockStyle.Fill;
+
+            form.Controls.Add(actionsMain);
+            form.Show(this);
         }
 
         // ─── Theme / Layout ────────────────────────────────────────────────
@@ -830,7 +848,7 @@ namespace SmartRoutines.UI.Forms
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
-            _engine.StartAsync();
+            //_engine.StartAsync();
         }
 
         protected override CreateParams CreateParams
