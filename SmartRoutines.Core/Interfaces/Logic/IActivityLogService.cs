@@ -38,7 +38,7 @@ public interface IActivityLogService
     /// <summary>
     /// Adds a new log to the system.
     /// </summary>
-    Task AddLogAsync(ActivityLogDto logDto);
+   // Task AddLogAsync(ActivityLogDto logDto);
 }
 
 /// <summary>

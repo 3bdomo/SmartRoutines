@@ -36,6 +36,7 @@ namespace SmartRoutines.UI
                     services.AddTransient<UC_Dashboard>();
                     services.AddTransient<UC_ActionsMain>();
                     services.AddTransient<UC_Settings>();
+                    services.AddTransient<UC_LogsPage>();
                 })
                 .Build();
 

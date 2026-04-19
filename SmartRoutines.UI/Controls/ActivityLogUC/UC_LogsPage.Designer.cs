@@ -115,19 +115,15 @@
             // 
             // pnlLogsArea
             // 
-            // Make logs area fill the space between header/divider and the bottom console,
-            // so ExecutionHistory height does not create a large fixed gap.
-            pnlLogsArea.AutoSize = false;
-            // remove AutoSizeMode so the panel doesn't expand unexpectedly
+            pnlLogsArea.AutoScroll = true;
             pnlLogsArea.CustomizableEdges = customizableEdges7;
             _transition.SetDecoration(pnlLogsArea, Guna.UI2.AnimatorNS.DecorationType.None);
-            // Important: use Fill so this panel occupies the remaining space and the console stays docked at bottom
             pnlLogsArea.Dock = DockStyle.Fill;
             pnlLogsArea.Location = new Point(0, 149);
             pnlLogsArea.Margin = new Padding(0);
             pnlLogsArea.Name = "pnlLogsArea";
             pnlLogsArea.ShadowDecoration.CustomizableEdges = customizableEdges8;
-            pnlLogsArea.Size = new Size(2295, 0);
+            pnlLogsArea.Size = new Size(2295, 607);
             pnlLogsArea.TabIndex = 4;
             // 
             // UC_LogsPage

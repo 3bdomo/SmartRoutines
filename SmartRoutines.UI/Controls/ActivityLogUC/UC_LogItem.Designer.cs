@@ -85,7 +85,7 @@ namespace SmartRoutines.UI.Controls
             // pnlIcon
             // 
             // Increased the icon container for a slightly larger icon
-            pnlIcon.BorderRadius = 36;
+            pnlIcon.BorderRadius = 26;
             pnlIcon.BorderStyle = System.Drawing.Drawing2D.DashStyle.Dot;
             pnlIcon.Controls.Add(picStatus);
             pnlIcon.CustomizableEdges = customizableEdges1;

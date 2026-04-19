@@ -29,7 +29,7 @@ public static class DependencyInjection
         services.AddSingleton<ILiveLogger>(sp => sp.GetRequiredService<LiveLogger>());
 
         // Activity log service: scoped so it can work with UnitOfWork per request/operation
-        services.AddScoped<IActivityLogService, LoggerService>();
+        services.AddSingleton<IActivityLogService, LoggerService>();
 
         // Executors
         // Register IAction implementations as transient - a fresh instance per pipeline
