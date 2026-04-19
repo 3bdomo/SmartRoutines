@@ -25,11 +25,16 @@ namespace SmartRoutines.Core.Interfaces.Logic
         void Configure(string json);
 
         /// <summary>
-        /// Called by the Engine every 30s. Returns true when the condition is met.
-        /// (Equivalent to your IsSatisfied property)
+        /// Called by the Engine every 1s-30s. Returns true when the condition is met.
         /// </summary>
         /// <returns>True if the routine should execute, otherwise false.</returns>
-        bool ShouldFire();
+        Task<bool> ShouldFireAsync();
+
+        /// <summary>
+        /// Returns a human-readable status of why the trigger is or isn't firing.
+        /// Used for real-time UI diagnostics.
+        /// </summary>
+        string GetDiagnosticInfo();
 
         /// <summary>
         /// Post-execution hook. Called by the engine immediately after execution 

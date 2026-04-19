@@ -36,6 +36,11 @@ public interface IAutomationEngine
     Task ExecuteManualAsync(Guid routineId);
 
     /// <summary>
+    /// Returns real-time diagnostic information for a specific routine's trigger.
+    /// </summary>
+    string GetRoutineDiagnostic(Guid routineId);
+
+    /// <summary>
     /// Raised when a routine begins execution.
     /// </summary>
     event EventHandler<RoutineStartedEventArgs>? RoutineStarted;

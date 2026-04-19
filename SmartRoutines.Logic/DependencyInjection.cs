@@ -22,7 +22,6 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
 
         // Core Services
-        // 
         services.AddScoped<IRoutineService, RoutineService>();
         // Live logger: Singleton so the UI can subscribe once and receive events
         services.AddSingleton<LiveLogger>();

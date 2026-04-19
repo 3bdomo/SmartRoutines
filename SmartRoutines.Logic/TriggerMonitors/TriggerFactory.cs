@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Interfaces.Logic;
 using System;
 using System.Collections.Generic;
@@ -21,6 +21,7 @@ namespace SmartRoutines.Logic.TriggerMonitors
               TriggerType.Battery => new BatteryTrigger(),
               TriggerType.WiFi => new WiFiTrigger(),
                 TriggerType.AppLaunched => new AppLaunchedTrigger(),
+                TriggerType.FileChanged => new FileChangedTrigger(),
                 _ => throw new NotSupportedException($"Trigger {type} not supported")
             };
         }

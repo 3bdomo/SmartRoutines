@@ -82,6 +82,12 @@ public sealed class OpenUrlExecutor : IAction
     {
         var cleaned = candidate.Trim().Trim('"');
 
+        // If no protocol is specified, default to https://
+        if (!cleaned.Contains("://"))
+        {
+            cleaned = "https://" + cleaned;
+        }
+
         if (!Uri.TryCreate(cleaned, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {

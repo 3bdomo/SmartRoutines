@@ -43,8 +43,21 @@ namespace SmartRoutines.UI
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
 
+            // Global exception handling
+            Application.ThreadException += (s, e) => ShowErrorDialog(e.Exception, "UI Thread Exception");
+            AppDomain.CurrentDomain.UnhandledException += (s, e) => ShowErrorDialog(e.ExceptionObject as Exception, "Critical Domain Exception");
+
             var mainForm = host.Services.GetRequiredService<FrmMain>();
             Application.Run(mainForm);
+        }
+
+        private static void ShowErrorDialog(Exception? ex, string source)
+        {
+            string message = ex?.Message ?? "An unknown error occurred.";
+            string stackTrace = ex?.StackTrace ?? "No stack trace available.";
+            
+            MessageBox.Show($"[SmartRoutines - {source}]\n\n{message}\n\nStack Trace:\n{stackTrace.Substring(0, Math.Min(stackTrace.Length, 500))}...", 
+                "Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

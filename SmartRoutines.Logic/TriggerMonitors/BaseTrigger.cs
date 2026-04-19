@@ -21,7 +21,10 @@ namespace SmartRoutines.Logic.TriggerMonitors
         public virtual void Configure(string json) { }
 
         /// <inheritdoc />
-        public abstract bool ShouldFire();
+        public abstract Task<bool> ShouldFireAsync();
+
+        /// <inheritdoc />
+        public virtual string GetDiagnosticInfo() => IsEnabled ? "Running" : "Disabled";
 
         /// <inheritdoc />
         public virtual void OnFired()

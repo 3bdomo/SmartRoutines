@@ -6,9 +6,11 @@ namespace SmartRoutines.Logic.TriggerMonitors
     {
         public override string DisplayName => "At System Startup";
 
-        public override bool ShouldFire()
+        public override Task<bool> ShouldFireAsync()
         {
-            return IsEnabled && !HasFired;
+            return Task.FromResult(IsEnabled && !HasFired);
         }
+
+        public override string GetDiagnosticInfo() => HasFired ? "Already fired at startup" : "Awaiting startup trigger";
     }
 }

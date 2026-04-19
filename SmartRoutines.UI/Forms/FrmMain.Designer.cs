@@ -48,9 +48,9 @@ namespace SmartRoutines.UI.Forms
             guna2BorderlessForm = new Guna2BorderlessForm(components);
             guna2DragControl = new Guna2DragControl(components);
             pnlHeader = new Guna2Panel();
-            btnClose = new Guna2Button();
-            btnMaximize = new Guna2Button();
-            btnMinimize = new Guna2Button();
+            controlBoxClose = new Guna2ControlBox();
+            controlBoxMaximize = new Guna2ControlBox();
+            controlBoxMinimize = new Guna2ControlBox();
             lblAppSubtitle = new Label();
             lblAppTitle = new Label();
             btnSidebarCollapse = new Guna2CircleButton();
@@ -96,11 +96,10 @@ namespace SmartRoutines.UI.Forms
             // 
             // pnlHeader
             // 
-            pnlHeader.BorderColor = Color.FromArgb(42, 42, 42);
             pnlHeader.BorderThickness = 1;
-            pnlHeader.Controls.Add(btnClose);
-            pnlHeader.Controls.Add(btnMaximize);
-            pnlHeader.Controls.Add(btnMinimize);
+            pnlHeader.Controls.Add(controlBoxClose);
+            pnlHeader.Controls.Add(controlBoxMaximize);
+            pnlHeader.Controls.Add(controlBoxMinimize);
             pnlHeader.Controls.Add(lblAppSubtitle);
             pnlHeader.Controls.Add(lblAppTitle);
             pnlHeader.CustomizableEdges = customizableEdges24;
@@ -112,47 +111,37 @@ namespace SmartRoutines.UI.Forms
             pnlHeader.Size = new Size(1463, 60);
             pnlHeader.TabIndex = 0;
             // 
-            // btnClose
+            // controlBoxClose
             // 
-            btnClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnClose.CustomizableEdges = customizableEdges18;
-            btnClose.Font = new Font("Segoe UI", 9F);
-            btnClose.ForeColor = Color.White;
-            btnClose.Location = new Point(1449, 9);
-            btnClose.Margin = new Padding(3, 4, 3, 4);
-            btnClose.Name = "btnClose";
-            btnClose.ShadowDecoration.CustomizableEdges = customizableEdges19;
-            btnClose.Size = new Size(41, 40);
-            btnClose.TabIndex = 4;
-            btnClose.Click += btnClose_Click;
+            controlBoxClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            controlBoxClose.FillColor = Color.Transparent;
+            controlBoxClose.IconColor = Color.White;
+            controlBoxClose.Location = new Point(1418, 0);
+            controlBoxClose.Name = "controlBoxClose";
+            controlBoxClose.Size = new Size(45, 36);
+            controlBoxClose.TabIndex = 4;
             // 
-            // btnMaximize
+            // controlBoxMaximize
             // 
-            btnMaximize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnMaximize.CustomizableEdges = customizableEdges20;
-            btnMaximize.Font = new Font("Segoe UI", 9F);
-            btnMaximize.ForeColor = Color.White;
-            btnMaximize.Location = new Point(1406, 9);
-            btnMaximize.Margin = new Padding(3, 4, 3, 4);
-            btnMaximize.Name = "btnMaximize";
-            btnMaximize.ShadowDecoration.CustomizableEdges = customizableEdges21;
-            btnMaximize.Size = new Size(41, 40);
-            btnMaximize.TabIndex = 3;
-            btnMaximize.Click += btnMaximize_Click;
+            controlBoxMaximize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            controlBoxMaximize.ControlBoxType = Guna.UI2.WinForms.Enums.ControlBoxType.MaximizeBox;
+            controlBoxMaximize.FillColor = Color.Transparent;
+            controlBoxMaximize.IconColor = Color.White;
+            controlBoxMaximize.Location = new Point(1373, 0);
+            controlBoxMaximize.Name = "controlBoxMaximize";
+            controlBoxMaximize.Size = new Size(45, 36);
+            controlBoxMaximize.TabIndex = 3;
             // 
-            // btnMinimize
+            // controlBoxMinimize
             // 
-            btnMinimize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnMinimize.CustomizableEdges = customizableEdges22;
-            btnMinimize.Font = new Font("Segoe UI", 9F);
-            btnMinimize.ForeColor = Color.White;
-            btnMinimize.Location = new Point(1363, 9);
-            btnMinimize.Margin = new Padding(3, 4, 3, 4);
-            btnMinimize.Name = "btnMinimize";
-            btnMinimize.ShadowDecoration.CustomizableEdges = customizableEdges23;
-            btnMinimize.Size = new Size(41, 40);
-            btnMinimize.TabIndex = 2;
-            btnMinimize.Click += btnMinimize_Click;
+            controlBoxMinimize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            controlBoxMinimize.ControlBoxType = Guna.UI2.WinForms.Enums.ControlBoxType.MinimizeBox;
+            controlBoxMinimize.FillColor = Color.Transparent;
+            controlBoxMinimize.IconColor = Color.White;
+            controlBoxMinimize.Location = new Point(1328, 0);
+            controlBoxMinimize.Name = "controlBoxMinimize";
+            controlBoxMinimize.Size = new Size(45, 36);
+            controlBoxMinimize.TabIndex = 2;
             // 
             // lblAppSubtitle
             // 
@@ -419,9 +408,9 @@ namespace SmartRoutines.UI.Forms
         private Guna.UI2.WinForms.Guna2Panel pnlHeader;
         private System.Windows.Forms.Label lblAppTitle;
         private System.Windows.Forms.Label lblAppSubtitle;
-        private Guna.UI2.WinForms.Guna2Button btnClose;
-        private Guna.UI2.WinForms.Guna2Button btnMaximize;
-        private Guna.UI2.WinForms.Guna2Button btnMinimize;
+        private Guna.UI2.WinForms.Guna2ControlBox controlBoxClose;
+        private Guna.UI2.WinForms.Guna2ControlBox controlBoxMaximize;
+        private Guna.UI2.WinForms.Guna2ControlBox controlBoxMinimize;
         private Guna.UI2.WinForms.Guna2Panel pnlSidebar;
         private System.Windows.Forms.Panel pnlSidebarBrand;
         private Guna.UI2.WinForms.Guna2GradientPanel pnlLogoBase;

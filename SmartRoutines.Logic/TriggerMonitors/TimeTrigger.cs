@@ -4,13 +4,13 @@ namespace SmartRoutines.Logic.TriggerMonitors
 {
     public class TimeTrigger : BaseTrigger<TriggerConfiguration>
     {
-        private DateTime _lastResetDate = DateTime.MinValue;
+        private DateTime _lastResetDate = DateTime.Today;
 
         public override string DisplayName => $"Scheduled at {Config?.ScheduledTime:HH:mm}";
 
-        public override bool ShouldFire()
+        public override Task<bool> ShouldFireAsync()
         {
-            if (!IsEnabled || Config == null) return false;
+            if (!IsEnabled || Config == null) return Task.FromResult(false);
 
             // Reset flag for a new day
             if (DateTime.Today > _lastResetDate)
@@ -19,17 +19,29 @@ namespace SmartRoutines.Logic.TriggerMonitors
                 _lastResetDate = DateTime.Today;
             }
 
-            if (HasFired) return false;
+            if (HasFired) return Task.FromResult(false);
 
             var todayFlag = GetCurrentDayFlag();
 
             // If RepeatDays doesn't contain today's flag, don't fire
-            if (!Config.RepeatDays.HasFlag(todayFlag)) return false;
+            if (!Config.RepeatDays.HasFlag(todayFlag)) return Task.FromResult(false);
 
             var now = DateTime.Now.TimeOfDay;
             var scheduled = Config.ScheduledTime.TimeOfDay;
 
-            return now >= scheduled;
+            return Task.FromResult(now >= scheduled);
+        }
+
+        public override string GetDiagnosticInfo()
+        {
+            if (!IsEnabled) return "Disabled";
+            if (Config == null) return "Invalid Configuration";
+            if (HasFired) return "Fired today";
+            
+            var todayFlag = GetCurrentDayFlag();
+            if (!Config!.RepeatDays.HasFlag(todayFlag)) return "Not scheduled for today";
+            
+            return $"Scheduled for {Config.ScheduledTime:HH:mm}";
         }
 
         private Core.Domain.Enums.DayOfWeek GetCurrentDayFlag()

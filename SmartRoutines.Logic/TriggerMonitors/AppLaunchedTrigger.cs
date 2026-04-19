@@ -1,29 +1,40 @@
-﻿using SmartRoutines.Core.DTOs.Configurations;
+using SmartRoutines.Core.Domain.Models;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
 namespace SmartRoutines.Logic.TriggerMonitors
 {
-    public class AppLaunchedTrigger : BaseTrigger<AppLaunchedTriggerConfig>
+    public class AppLaunchedTrigger : BaseTrigger<TriggerConfiguration>
     {
-        private string _processName = string.Empty;
+        public override string DisplayName => $"App launched: {Config?.SsidName ?? "Unknown"}";
 
-        public override string DisplayName => $"App launched: {_processName}";
+        private bool _isRunning = false;
 
-        public override void Configure(string json)
+        public override Task<bool> ShouldFireAsync()
         {
-            _processName = json;
+            if (Config == null || string.IsNullOrWhiteSpace(Config.SsidName)) return Task.FromResult(false);
+
+            string target = System.IO.Path.GetFileNameWithoutExtension(Config.SsidName);
+            _isRunning = Process.GetProcessesByName(target).Any();
+
+            if (_isRunning)
+            {
+                if (!HasFired) return Task.FromResult(true);
+            }
+            else
+            {
+                Reset();
+            }
+
+            return Task.FromResult(false);
         }
 
-        public override bool ShouldFire()
+        public override string GetDiagnosticInfo()
         {
-            if (string.IsNullOrEmpty(_processName)) return false;
-
-            var isRunning = Process.GetProcessesByName(_processName).Any();
-
-            return IsEnabled && isRunning && !HasFired;
+            if (!IsEnabled) return "Disabled";
+            string target = System.IO.Path.GetFileNameWithoutExtension(Config?.SsidName ?? "None");
+            return _isRunning ? $"Running: {target}" : $"Not running: {target}";
         }
     }
 }
