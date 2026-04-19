@@ -21,14 +21,14 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        // Core Services
-        services.AddScoped<IRoutineService, RoutineService>();
+        // Core Services (Transient to avoid shared context issues in desktop UI)
+        services.AddTransient<IRoutineService, RoutineService>();
         // Live logger: Singleton so the UI can subscribe once and receive events
         services.AddSingleton<LiveLogger>();
         services.AddSingleton<ILiveLogger>(sp => sp.GetRequiredService<LiveLogger>());
 
-        // Activity log service: scoped so it can work with UnitOfWork per request/operation
-        services.AddScoped<IActivityLogService, LoggerService>();
+        // Activity log service: transient to ensure a fresh UoW per call/operation
+        services.AddTransient<IActivityLogService, LoggerService>();
 
         // Executors
         // Register IAction implementations as transient - a fresh instance per pipeline

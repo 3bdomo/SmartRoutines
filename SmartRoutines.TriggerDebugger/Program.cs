@@ -62,6 +62,18 @@ namespace SmartRoutines.TriggerDebugger
             if (timeStr.Contains(":") && timeStr.Length == 4) timeStr = "0" + timeStr;
             
             string isoTime = $"2026-01-01T{timeStr}:00";
+            
+            // Helpful hint for AM/PM confusion
+            if (DateTime.TryParse(isoTime, out var parsed))
+            {
+                if (DateTime.Now.TimeOfDay > parsed.TimeOfDay)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Hint: This time has already passed for today. Use 24h format (e.g. 23:12) if you meant PM.");
+                    Console.ResetColor();
+                }
+            }
+
             string json = "{\"ScheduledTime\": \"" + isoTime + "\", \"RepeatDays\": 127}";
             
             var trigger = new TimeTrigger();
@@ -70,12 +82,7 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine($"\nMonitoring Time Trigger (Target: {timeStr})");
             Console.WriteLine("Press 'Q' to stop monitoring.");
 
-            while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
-            {
-                bool shouldFire = await trigger.ShouldFireAsync();
-                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}    ");
-                await Task.Delay(1000);
-            }
+            await RunTestLoop(trigger);
         }
 
         static async Task TestWiFiTrigger()
@@ -90,12 +97,7 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine($"\nMonitoring WiFi (Target: {ssid})");
             Console.WriteLine("Press 'Q' to stop monitoring.");
 
-            while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
-            {
-                bool shouldFire = await trigger.ShouldFireAsync();
-                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}    ");
-                await Task.Delay(1000);
-            }
+            await RunTestLoop(trigger);
         }
 
         static async Task TestBatteryTrigger()
@@ -110,12 +112,7 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine($"\nMonitoring Battery (Fires below {pct}%)");
             Console.WriteLine("Press 'Q' to stop monitoring.");
 
-            while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
-            {
-                bool shouldFire = await trigger.ShouldFireAsync();
-                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}    ");
-                await Task.Delay(1000);
-            }
+            await RunTestLoop(trigger);
         }
 
         static async Task TestIdleTrigger()
@@ -130,12 +127,7 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine($"\nMonitoring Idle State (Target: {minutes}m)");
             Console.WriteLine("Press 'Q' to stop monitoring.");
 
-            while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
-            {
-                bool shouldFire = await trigger.ShouldFireAsync();
-                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}    ");
-                await Task.Delay(1000);
-            }
+            await RunTestLoop(trigger);
         }
 
         static async Task TestAppLaunched()
@@ -143,7 +135,6 @@ namespace SmartRoutines.TriggerDebugger
             Console.Write("Enter app name (only name, e.g. chrome, notepad): ");
             string appName = Console.ReadLine() ?? "";
             
-            // In SmartRoutines, SsidName property is reused for the process/ssid target in generic configs
             string json = "{\"SsidName\": \"" + appName + "\"}";
             var trigger = new AppLaunchedTrigger();
             trigger.Configure(json);
@@ -151,12 +142,7 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine($"\nMonitoring App Launch (Target: {appName})");
             Console.WriteLine("Press 'Q' to stop monitoring.");
 
-            while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
-            {
-                bool shouldFire = await trigger.ShouldFireAsync();
-                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}    ");
-                await Task.Delay(1000);
-            }
+            await RunTestLoop(trigger);
         }
 
         static async Task TestStartup()
@@ -180,11 +166,10 @@ namespace SmartRoutines.TriggerDebugger
 
         static async Task TestFileChanged()
         {
-            Console.Write("Enter file name or full path (e.g. hager.txt): ");
+            Console.Write("Enter file name or full path (e.g. test.txt): ");
             string input = Console.ReadLine() ?? "";
             string filePath = input;
 
-            // FIGMA UX FIX: If the user just enters a filename, try to find it in their Downloads or Desktop
             if (!System.IO.Path.IsPathRooted(input))
             {
                 string downloads = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", input);
@@ -194,7 +179,6 @@ namespace SmartRoutines.TriggerDebugger
                 else if (System.IO.File.Exists(desktop)) filePath = desktop;
             }
 
-            // Escape backslashes for JSON
             string json = "{\"SsidName\": \"" + filePath.Replace("\\", "\\\\") + "\"}";
             var trigger = new FileChangedTrigger();
             trigger.Configure(json);
@@ -204,12 +188,45 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine("Press 'Q' to stop monitoring.");
             Console.WriteLine("-------------------------------------------------");
 
+            await RunTestLoop(trigger);
+        }
+
+        static async Task RunTestLoop(Core.Interfaces.Logic.ITrigger trigger)
+        {
             while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
             {
                 bool shouldFire = await trigger.ShouldFireAsync();
-                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}    ");
+                bool hasFired = trigger.HasFired;
+
+                Console.Write($"\r[{DateTime.Now:HH:mm:ss}] ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write($"{trigger.GetDiagnosticInfo()}".PadRight(30));
+                
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(" | ShouldFire: ");
+                WriteStatus(shouldFire);
+                
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(" | HasFired: ");
+                WriteStatus(hasFired);
+                Console.Write("    ");
+
+                // Emulate the Automation Engine logic
+                if (shouldFire && !hasFired) 
+                {
+                    trigger.OnFired();
+                }
+                
+                Console.ResetColor();
                 await Task.Delay(1000);
             }
+        }
+
+        static void WriteStatus(bool status)
+        {
+            Console.ForegroundColor = status ? ConsoleColor.Green : ConsoleColor.Red;
+            Console.Write(status ? "True " : "False");
+            Console.ForegroundColor = ConsoleColor.White;
         }
     }
 }

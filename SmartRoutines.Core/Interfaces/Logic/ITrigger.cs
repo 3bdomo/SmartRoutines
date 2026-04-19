@@ -13,6 +13,11 @@ namespace SmartRoutines.Core.Interfaces.Logic
         bool IsEnabled { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether the trigger has already fired for its current cycle.
+        /// </summary>
+        bool HasFired { get; }
+
+        /// <summary>
         /// Human-readable name for UI display (e.g., 'Every day at 07:30' or 'Battery < 20%')
         /// </summary>
         string DisplayName { get; }

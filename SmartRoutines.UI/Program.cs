@@ -1,8 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Data;
+using SmartRoutines.Data.Context;
 using SmartRoutines.Logic;
 using SmartRoutines.UI.Controls;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
@@ -45,9 +47,28 @@ namespace SmartRoutines.UI
             using (var scope = host.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
+                // --- Automatic Database Migration ---
+                try
+                {
+                    var context = services.GetRequiredService<SmartRoutinesDbContext>();
+                    context.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    ShowErrorDialog(ex, "Database Migration");
+                    return; // Stop app if database cannot be initialized
+                }
+
+                var engine = services.GetRequiredService<IAutomationEngine>();
                 var mainForm = services.GetRequiredService<FrmMain>();
+                
+                // Start the engine
+                engine.StartAsync().GetAwaiter().GetResult();
+
                 Application.Run(mainForm);
-                engine.StopAsync();
+                
+                try { engine.StopAsync().GetAwaiter().GetResult(); } catch { }
             }
         }
 

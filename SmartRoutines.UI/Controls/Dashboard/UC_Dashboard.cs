@@ -21,6 +21,7 @@ namespace SmartRoutines.UI.Controls
 
         // ── Cached stat values to avoid redundant LINQ on every event ──────
         private int _cachedTotal, _cachedActive, _cachedRunning, _cachedActions;
+        private bool _isLoading = false;
 
         private readonly IRoutineService _routineService;
 
@@ -154,6 +155,9 @@ namespace SmartRoutines.UI.Controls
         // ─── Seed sample data ────────────────────────────────────────────────
         public async Task ReloadDataAsync()
         {
+            if (_isLoading) return;
+            _isLoading = true;
+
             try
             {
                 var cards = await _routineService.GetAllCardsAsync();
@@ -197,6 +201,10 @@ namespace SmartRoutines.UI.Controls
             catch (Exception ex)
             {
                 MessageBox.Show("Error loading routines: " + ex.Message);
+            }
+            finally
+            {
+                _isLoading = false;
             }
         }
 
