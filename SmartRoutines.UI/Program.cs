@@ -40,19 +40,18 @@ namespace SmartRoutines.UI
                 })
                 .Build();
 
-            //Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-
             using (var scope = host.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
 
-                // --- Automatic Database Migration ---
+                //---Automatic Database Migration ---
                 try
                 {
                     var context = services.GetRequiredService<SmartRoutinesDbContext>();
-                    context.Database.Migrate();
+
+                    var pendingMigrations = context.Database.GetPendingMigrations();
+                    if (pendingMigrations.Any())
+                        context.Database.Migrate();
                 }
                 catch (Exception ex)
                 {
@@ -62,12 +61,12 @@ namespace SmartRoutines.UI
 
                 var engine = services.GetRequiredService<IAutomationEngine>();
                 var mainForm = services.GetRequiredService<FrmMain>();
-                
+
                 // Start the engine
                 engine.StartAsync().GetAwaiter().GetResult();
 
                 Application.Run(mainForm);
-                
+
                 try { engine.StopAsync().GetAwaiter().GetResult(); } catch { }
             }
         }
@@ -76,9 +75,9 @@ namespace SmartRoutines.UI
         {
             string message = ex?.Message ?? "An unknown error occurred.";
             string stackTrace = ex?.StackTrace ?? "No stack trace available.";
-            
-            MessageBox.Show($"[SmartRoutines - {source}]\n\n{message}\n\nStack Trace:\n{stackTrace.Substring(0, Math.Min(stackTrace.Length, 500))}...", 
-                "Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            SmartDialog.Show(null, $"[SmartRoutines - {source}]\n\n{message}\n\nStack Trace:\n{stackTrace.Substring(0, Math.Min(stackTrace.Length, 500))}...",
+                "Application Error", DialogIconType.Error);
         }
     }
 }

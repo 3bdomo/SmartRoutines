@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using SmartRoutines.Core.Domain.Entities;
 
 namespace SmartRoutines.Data.Context
@@ -12,15 +11,16 @@ namespace SmartRoutines.Data.Context
         public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
         public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 
-        public SmartRoutinesDbContext()
-        {
-        }
+        // public SmartRoutinesDbContext()
+        // {
+        // }
 
         public SmartRoutinesDbContext(DbContextOptions<SmartRoutinesDbContext> options)
             : base(options)
         {
         }
 
+        /*
         /// <summary>
         /// Called only at design-time (e.g. Add-Migration) when no options are configured via DI.
         /// Finds the appsettings.json in the UI project to read the connection string.
@@ -62,6 +62,8 @@ namespace SmartRoutines.Data.Context
 
             return currentDirectory;
         }
+        */
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
