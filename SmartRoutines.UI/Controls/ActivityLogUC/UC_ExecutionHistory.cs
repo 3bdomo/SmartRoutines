@@ -25,14 +25,39 @@ namespace SmartRoutines.UI.Controls
             
             // ── Content ──
             pnlContent.BackColor = SmartTheme.Surface;
-            flowItems.BackColor = SmartTheme.Surface;
+            flowItems.BackColor = SmartTheme.Background;
             flowItems.FlowDirection = FlowDirection.TopDown;
             flowItems.WrapContents = false;
             flowItems.AutoScroll = true;
             flowItems.Padding = new Padding(0);
             SetHeight(EmptyHeight);
+            
+            this.Load += (s, e) => UpdateChildWidths();
+            this.Resize += (s, e) => UpdateChildWidths();
+            flowItems.SizeChanged += (s, e) => UpdateChildWidths();
         }
+        private void UpdateChildWidths()
+        {
+            if (flowItems == null) return;
+            int childWidth = Math.Max(120, flowItems.ClientSize.Width - 25);
 
+            foreach (Control c in flowItems.Controls)
+            {
+                // Keep non-log placeholders reasonably sized but allow log items to fill width
+                c.Width = childWidth;
+                c.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+            }
+            int count = flowItems.Controls.Cast<Control>().Count(ctrl => ctrl is UC_LogItem);
+            if (count == 0)
+            {
+                SetHeight(EmptyHeight);
+            }
+            else
+            {
+                int visibleCount = Math.Min(count, MaxVisible);
+                SetHeight(visibleCount * ItemHeight);
+            }
+        }
         public void LoadLogs(List<ActivityLog> logs)
         {
             flowItems.Controls.Clear();

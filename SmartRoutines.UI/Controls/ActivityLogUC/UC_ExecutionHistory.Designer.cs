@@ -66,7 +66,6 @@
             // 
             // flowItems
             // 
-            flowItems.AutoScroll = true;
             _transition.SetDecoration(flowItems, Guna.UI2.AnimatorNS.DecorationType.None);
             flowItems.Dock = DockStyle.Fill;
             flowItems.FlowDirection = FlowDirection.TopDown;

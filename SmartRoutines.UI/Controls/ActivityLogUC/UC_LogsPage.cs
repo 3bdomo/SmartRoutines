@@ -40,37 +40,82 @@ namespace SmartRoutines.UI.Controls
             this.DoubleBuffered = true;
 
             // Header visuals (protect against designer being incomplete)
-            if (pnlHeader != null)
-            {
+           
                 pnlHeader.BackColor = SmartTheme.Surface;
-            }
-            if (lblTitle != null)
-            {
+            
+            
                 lblTitle.Text = "Activity Log";
                 lblTitle.Font = SmartTheme.FontSubheader;
                 lblTitle.ForeColor = SmartTheme.TextPrimary;
-            }
-
+            
             // Configure clear button if present
-            if (btnClearLogs != null)
-            {
+           
                 btnClearLogs.Font = SmartTheme.FontBody;
                 btnClearLogs.ForeColor = SmartTheme.Danger;
                 btnClearLogs.BorderRadius = 8;
                 btnClearLogs.FillColor = SmartTheme.DangerMuted;
                 btnClearLogs.CustomBorderColor = SmartTheme.Danger;
                 btnClearLogs.CustomBorderThickness = new Padding(1);
-                btnClearLogs.Click += BtnClearLogs_Click;
+               
+            
+            // Make header controls responsive
+            btnClearLogs.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblTitle.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+
+            this.Resize += UC_LogsPage_Resize;
+            // perform an initial layout pass
+            AdjustResponsiveLayout();
+            // Subscribe to service events only if we have a service instance
+            //if (_logService != null)
+            //{
+            //   // _logService.OnLogAdded += LogService_OnLogAdded;
+            //   // _logService.OnLogsCleared += LogService_OnLogsCleared;
+            //}
+        }
+        private void UC_LogsPage_Resize(object? sender, EventArgs e) => AdjustResponsiveLayout();
+
+        /// <summary>
+        /// Adjusts sizes/font-sizes of header controls and child areas to be responsive to the page width.
+        /// Keep the adjustments inexpensive as Resize fires frequently.
+        /// </summary>
+        private void AdjustResponsiveLayout()
+        {
+            if (this.IsDisposed) return;
+
+            // Scale factor: 1200 is baseline width from design -> clamp to reasonable range
+            double scale = Math.Clamp(this.Width / 900.0, 0.55, 1.45);
+
+            // Button width: proportion of width but capped
+            btnClearLogs.Width = Math.Min((int)(this.Width * 0.18), 420);
+
+            try
+            {
+                lblTitle.Font = new Font(SmartTheme.FontSubheader.FontFamily,
+                                         (float)(SmartTheme.FontSubheader.Size * scale),
+                                         SmartTheme.FontSubheader.Style);
+
+                btnClearLogs.Font = new Font(SmartTheme.FontBody.FontFamily,
+                                             (float)(SmartTheme.FontBody.Size * Math.Max(0.45, scale)),
+                                             SmartTheme.FontBody.Style);
+            }
+            catch
+            {
+                // If theme fonts are not available or invalid, ignore scaling (safe fallback).
             }
 
-            // Subscribe to service events only if we have a service instance
-            if (_logService != null)
+            // Ensure the execution history control width matches available area
+            if (_ucHistory != null && !_ucHistory.IsDisposed)
             {
-                _logService.OnLogAdded += LogService_OnLogAdded;
-                _logService.OnLogsCleared += LogService_OnLogsCleared;
+                _ucHistory.Width = Math.Max(300, pnlLogsArea.ClientSize.Width - 8);
+            }
+            if (ucConsole != null)
+            {
+                float consoleBase = 9f;
+                ucConsole.Font = new Font(ucConsole.Font.FontFamily, Math.Max(8f, consoleBase * (float)scale));
             }
         }
 
+        // Let
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
@@ -84,53 +129,69 @@ namespace SmartRoutines.UI.Controls
 
             _ucHistory = new UC_ExecutionHistory
             {
-                Dock = DockStyle.Top,
+                Dock = DockStyle.Fill,    // fill available area instead of Top
                 AutoSize = false
             };
 
-            pnlLogsArea.Controls.Add(_ucHistory);
-
-            // If no IActivityLogService is provided at runtime, show sample logs so you can preview the UI
-            if (_logService == null)
+            // Defer adding and loading until after first layout pass so sizes are valid.
+            this.BeginInvoke(new Action(async () =>
             {
-                var sample = new List<ActivityLog>
-                {
-                    new ActivityLog(Guid.NewGuid(), "Morning Setup", LogStatus.Success, "All actions completed in 2.3s"),
-                    new ActivityLog(Guid.NewGuid(), "Evening Shutdown", LogStatus.Error, "Failed to stop backup service"),
-                    new ActivityLog(Guid.NewGuid(), "Focus Mode", LogStatus.Warning, "Some actions completed with warnings"),
-                      new ActivityLog(Guid.NewGuid(), "Focus Mode", LogStatus.Warning, "Some actions completed with warnings"),
-                      new ActivityLog(Guid.NewGuid(), "Focus Mode", LogStatus.Warning, "Some actions completed with warnings")
-                };
-                _ucHistory.LoadLogs(sample);
-                return;
-            }
+                pnlLogsArea.Controls.Add(_ucHistory);
 
-            // otherwise load from service
-            LoadLogsAsync();
+                //// If no service (design / preview), show sample logs.
+                //if (_logService == null)
+                //{
+                    var sample = new List<ActivityLog>
+                    {
+                        new ActivityLog(Guid.NewGuid(), "Morning Setup", LogStatus.Success, "All actions completed in 2.3s"),
+                        new ActivityLog(Guid.NewGuid(), "Evening Shutdown", LogStatus.Error, "Failed to stop backup service"),
+                        new ActivityLog(Guid.NewGuid(), "Focus Mode", LogStatus.Warning, "Some actions completed with warnings")
+                    };
+
+                    _ucHistory.LoadLogs(sample);
+                    _ucHistory.BringToFront();
+                    return;
+               // }
+
+                // Runtime: load persisted logs
+                //try
+                //{
+                //    var (dtos, total) = await _logService.GetPagedLogsAsync(1, 50);
+                //    if (dtos != null && dtos.Count > 0)
+                //        _ucHistory.LoadLogsFromDtos(dtos.ToList());
+                //    else
+                //        _ucHistory.ClearAllLogs();
+                //}
+                //catch (Exception ex)
+                //{
+                //    System.Diagnostics.Debug.WriteLine($"LoadLogsAsync error: {ex.Message}");
+                //    _ucHistory.ClearAllLogs();
+                //}
+            }));
         }
 
-        private async void LoadLogsAsync()
-        {
-            try
-            {
-                if (_logService == null) return;
+        //private async void LoadLogsAsync()
+        //{
+        //    try
+        //    {
+        //        if (_logService == null) return;
 
-                var (logs, totalCount) = await _logService.GetPagedLogsAsync(page: 1, pageSize: 10);
+        //        var (logs, totalCount) = await _logService.GetPagedLogsAsync(page: 1, pageSize: 10);
 
-                var logEntities = logs.Select(dto => new ActivityLog(
-                    Guid.Empty,
-                    dto.RoutineName,
-                    dto.Status,
-                    dto.Message
-                )).ToList();
+        //        var logEntities = logs.Select(dto => new ActivityLog(
+        //            Guid.Empty,
+        //            dto.RoutineName,
+        //            dto.Status,
+        //            dto.Message
+        //        )).ToList();
 
-                _ucHistory.LoadLogs(logEntities);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading logs: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        //        _ucHistory.LoadLogs(logEntities);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($"Error loading logs: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //}
 
         private async void BtnClearLogs_Click(object sender, EventArgs e)
         {
@@ -158,47 +219,47 @@ namespace SmartRoutines.UI.Controls
             }
         }
 
-        private void LogService_OnLogAdded(object sender, ActivityLogEventArgs e)
-        {
-            // Ensure UI exists before updating it
-            if (this.IsDisposed) return;
-            if (_ucHistory == null) return;
+        //private void LogService_OnLogAdded(object sender, ActivityLogEventArgs e)
+        //{
+        //    // Ensure UI exists before updating it
+        //    if (this.IsDisposed) return;
+        //    if (_ucHistory == null) return;
 
-            this.BeginInvoke(new Action(() =>
-            {
-                if (_ucHistory == null) return;
+        //    this.BeginInvoke(new Action(() =>
+        //    {
+        //        if (_ucHistory == null) return;
 
-                var logEntity = new ActivityLog(
-                    Guid.Empty,
-                    e.Log.RoutineName,
-                    e.Log.Status,
-                    e.Log.Message
-                );
+        //        var logEntity = new ActivityLog(
+        //            Guid.Empty,
+        //            e.Log.RoutineName,
+        //            e.Log.Status,
+        //            e.Log.Message
+        //        );
 
-                _ucHistory.AddLogToTop(logEntity);
-            }));
-        }
+        //        _ucHistory.AddLogToTop(logEntity);
+        //    }));
+        //}
 
-        private void LogService_OnLogsCleared(object sender, EventArgs e)
-        {
-            if (this.IsDisposed) return;
-            if (_ucHistory == null) return;
+        //private void LogService_OnLogsCleared(object sender, EventArgs e)
+        //{
+        //    if (this.IsDisposed) return;
+        //    if (_ucHistory == null) return;
 
-            this.BeginInvoke(new Action(() =>
-            {
-                _ucHistory.ClearAllLogs();
-            }));
-        }
+        //    this.BeginInvoke(new Action(() =>
+        //    {
+        //        _ucHistory.ClearAllLogs();
+        //    }));
+        //}
 
         // Unsubscribe safely when the control is destroyed
-        protected override void OnHandleDestroyed(EventArgs e)
-        {
-            if (_logService != null)
-            {
-                _logService.OnLogAdded -= LogService_OnLogAdded;
-                _logService.OnLogsCleared -= LogService_OnLogsCleared;
-            }
-            base.OnHandleDestroyed(e);
-        }
+        //protected override void OnHandleDestroyed(EventArgs e)
+        //{
+        //    if (_logService != null)
+        //    {
+        //      //  _logService.OnLogAdded -= LogService_OnLogAdded;
+        //       // _logService.OnLogsCleared -= LogService_OnLogsCleared;
+        //    }
+        //    base.OnHandleDestroyed(e);
+        //}
     }
 }

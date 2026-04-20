@@ -61,7 +61,7 @@
             // 
             // btnClearLogs
             // 
-            btnClearLogs.BorderRadius = 10;
+            btnClearLogs.BorderRadius = 8;
             btnClearLogs.CustomizableEdges = customizableEdges1;
             _transition.SetDecoration(btnClearLogs, Guna.UI2.AnimatorNS.DecorationType.None);
             btnClearLogs.DisabledState.BorderColor = Color.DarkGray;
@@ -74,7 +74,7 @@
             btnClearLogs.Margin = new Padding(4);
             btnClearLogs.Name = "btnClearLogs";
             btnClearLogs.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            btnClearLogs.Size = new Size(362, 104);
+            btnClearLogs.Size = new Size(300, 80);
             btnClearLogs.TabIndex = 1;
             btnClearLogs.Text = "  Clear Logs";
             // 
@@ -107,15 +107,15 @@
             ucConsole.Dock = DockStyle.Bottom;
             ucConsole.Font = new Font("Segoe UI", 9F);
             ucConsole.ForeColor = Color.FromArgb(255, 255, 255);
-            ucConsole.Location = new Point(0, 756);
+            ucConsole.Location = new Point(0, 814);
             ucConsole.Margin = new Padding(0);
             ucConsole.Name = "ucConsole";
-            ucConsole.Size = new Size(2295, 776);
+            ucConsole.Size = new Size(2295, 718);
             ucConsole.TabIndex = 3;
             // 
             // pnlLogsArea
             // 
-            pnlLogsArea.AutoScroll = true;
+            pnlLogsArea.AutoScroll = false;
             pnlLogsArea.CustomizableEdges = customizableEdges7;
             _transition.SetDecoration(pnlLogsArea, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlLogsArea.Dock = DockStyle.Fill;
@@ -123,7 +123,7 @@
             pnlLogsArea.Margin = new Padding(0);
             pnlLogsArea.Name = "pnlLogsArea";
             pnlLogsArea.ShadowDecoration.CustomizableEdges = customizableEdges8;
-            pnlLogsArea.Size = new Size(2295, 607);
+            pnlLogsArea.Size = new Size(2295, 665);
             pnlLogsArea.TabIndex = 4;
             // 
             // UC_LogsPage
