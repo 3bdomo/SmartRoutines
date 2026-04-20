@@ -418,7 +418,7 @@ namespace SmartRoutines.UI.Forms
             // Style the new standard control boxes
             controlBoxClose.HoverState.FillColor = Color.FromArgb(232, 17, 35); // Windows standard Red
             controlBoxClose.HoverState.IconColor = Color.White;
-            
+
             controlBoxMaximize.HoverState.FillColor = Color.FromArgb(45, 45, 45);
             controlBoxMinimize.HoverState.FillColor = Color.FromArgb(45, 45, 45);
 
