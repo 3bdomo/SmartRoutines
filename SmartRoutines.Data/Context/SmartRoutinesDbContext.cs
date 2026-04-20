@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SmartRoutines.Core.Domain.Entities;
 
 namespace SmartRoutines.Data.Context
@@ -11,33 +12,56 @@ namespace SmartRoutines.Data.Context
         public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
         public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 
+        public SmartRoutinesDbContext()
+        {
+        }
+
         public SmartRoutinesDbContext(DbContextOptions<SmartRoutinesDbContext> options)
             : base(options)
         {
         }
 
-        /*
         /// <summary>
-        /// Called only at design-time (Add-Migration) when no options are configured via DI.
-        /// Reads the connection string from appsettings.json in the startup project root.
+        /// Called only at design-time (e.g. Add-Migration) when no options are configured via DI.
+        /// Finds the appsettings.json in the UI project to read the connection string.
         /// </summary>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
+                var basePath = ResolveConfigurationBasePath();
                 var configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .SetBasePath(basePath)
                     .AddJsonFile("appsettings.json", optional: false)
                     .Build();
 
                 var connectionString = configuration.GetConnectionString("DefaultConnection");
-                optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
+                if (!string.IsNullOrEmpty(connectionString))
                 {
-                    sqlOptions.EnableRetryOnFailure();
-                });
+                    optionsBuilder.UseSqlServer(connectionString);
+                }
             }
         }
-        */
+
+        private static string ResolveConfigurationBasePath()
+        {
+            var currentDirectory = Directory.GetCurrentDirectory();
+            var candidates = new[]
+            {
+                currentDirectory,
+                Path.Combine(currentDirectory, "SmartRoutines.UI"),
+                Path.GetFullPath(Path.Combine(currentDirectory, "..", "SmartRoutines.UI")),
+                AppContext.BaseDirectory
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (File.Exists(Path.Combine(candidate, "appsettings.json")))
+                    return candidate;
+            }
+
+            return currentDirectory;
+        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

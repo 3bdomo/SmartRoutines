@@ -13,5 +13,7 @@ public sealed class TimeTriggerConfig
     /// <summary>
     /// Flags enum indicating which days the trigger should run on.
     /// </summary>
-    public Domain.Enums.DayOfWeek DaysOfWeek { get; set; }
+ 
+    public List<Domain.Enums.DayOfWeek> DaysOfWeek { get; set; } = new();
+
 }

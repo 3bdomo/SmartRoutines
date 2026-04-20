@@ -21,10 +21,12 @@ namespace SmartRoutines.Logic.TriggerMonitors
             _isShuttingDown = true;
         }
 
-        public override bool ShouldFire()
+        public override Task<bool> ShouldFireAsync()
         {
-            return IsEnabled && _isShuttingDown && !HasFired;
+            return Task.FromResult(IsEnabled && _isShuttingDown && !HasFired);
         }
+
+        public override string GetDiagnosticInfo() => _isShuttingDown ? "System is shutting down..." : "Monitoring for shutdown event";
 
         public override void Dispose()
         {

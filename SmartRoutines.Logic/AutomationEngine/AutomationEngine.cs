@@ -21,6 +21,7 @@ namespace SmartRoutines.Logic.AutomationEngine;
 /// </summary>
 public sealed class AutomationEngine : IAutomationEngine, IDisposable
 {
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILiveLogger _liveLogger;
     private readonly CancellationTokenSource _cts = new();
 
@@ -41,12 +42,10 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
     public event EventHandler<RoutineCompletedEventArgs>? RoutineCompleted;
     public event EventHandler<LogEmittedEventArgs>? LogEmitted;
 
-    private readonly IServiceScopeFactory _scopeFactory;
-
-    public AutomationEngine(ILiveLogger liveLogger, IServiceScopeFactory scopeFactory)
+    public AutomationEngine(IServiceScopeFactory scopeFactory, ILiveLogger liveLogger)
     {
-        _liveLogger = liveLogger ?? throw new ArgumentNullException(nameof(liveLogger));
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _liveLogger = liveLogger ?? throw new ArgumentNullException(nameof(liveLogger));
 
         // Forward live logger emissions into engine events for UI subscription
         if (_liveLogger is SmartRoutines.Logic.Services.LiveLogger ll)
@@ -85,7 +84,6 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
     /// <inheritdoc />
     public async Task ExecuteManualAsync(Guid routineId)
     {
-        // Use RunRoutineNowAsync to centralize manual execution logic
         await RunRoutineNowAsync(routineId).ConfigureAwait(false);
     }
 
@@ -125,8 +123,8 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
             {
                 _liveLogger.LogInfo($"Manual execution started: {runtime.Name}");
 
-                using var scope = _scopeFactory.CreateScope();
-                var runner = scope.ServiceProvider.GetRequiredService<ActionRunner>();
+                using var runScope = _scopeFactory.CreateScope();
+                var runner = runScope.ServiceProvider.GetRequiredService<ActionRunner>();
                 var ctx = new ActionContext { RoutineName = runtime.Name, TriggerTime = DateTime.UtcNow, TriggerData = new Dictionary<string, object?>(), IsManualTrigger = true };
                 await runner.RunAsync(runtime.Actions, ctx, perRunCts.Token).ConfigureAwait(false);
                 message = $"Manual executed {runtime.Actions.Count} actions.";
@@ -151,21 +149,20 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                 {
                     await PersistLogAsync(new ActivityLogDto
                     {
-                        Id = runtime.Id,
+                        Id = Guid.NewGuid(),
                         RoutineName = runtime.Name,
                         Status = status,
                         Message = message,
                         ExecutedAt = DateTime.UtcNow,
                         RelativeTime = "now",
                         DurationSeconds = (int)sw.Elapsed.TotalSeconds
-                    });
+                    }).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     _liveLogger.LogError("Failed to persist manual execution log", ex);
                 }
 
-                // Completion
                 RoutineCompleted?.Invoke(this, new RoutineCompletedEventArgs(routineId, error == null, error));
 
                 if (_runningCts.TryRemove(routineId, out var existing))
@@ -176,42 +173,44 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
         }, perRunCts.Token);
     }
 
-    /// <summary>
-    /// Cancels a running routine if present.
-    /// </summary>
-    public void StopRoutine(Guid routineId)
+    private const int MaxConcurrencyLimit = 5;
+
+    public string GetRoutineDiagnostic(Guid routineId)
     {
-        if (_runningCts.TryRemove(routineId, out var cts))
+        if (_triggerCache.TryGetValue(routineId, out var trigger))
         {
-            try { cts.Cancel(); } catch { }
-            try { cts.Dispose(); } catch { }
-            _liveLogger.LogInfo($"Stop requested for routine {routineId}");
+            return trigger.GetDiagnosticInfo();
         }
+        return "Not monitoring";
     }
 
     private async Task EngineLoopAsync(CancellationToken ct)
     {
-        // Heartbeat loop: high precision 1s interval, non-blocking
+        // 1s precision heartbeat
         while (!ct.IsCancellationRequested)
         {
             try
             {
                 var active = await GetActiveRuntimeRoutinesAsync().ConfigureAwait(false);
-                _liveLogger.LogInfo($"Engine monitoring {active.Count()} routines");
-
                 var activeSet = active.Select(r => r.Id).ToHashSet();
 
-                // Add or update triggers in cache
+                // 1. Maintain Trigger Cache
                 foreach (var r in active)
                 {
                     var cfg = r.TriggerConfig ?? string.Empty;
                     if (_triggerCache.TryGetValue(r.Id, out var existing))
                     {
-                        // Re-configure only if JSON changed
                         if (!_triggerConfig.TryGetValue(r.Id, out var old) || old != cfg)
                         {
-                            try { existing.Configure(cfg); _triggerConfig[r.Id] = cfg; }
-                            catch (Exception ex) { _liveLogger.LogError($"Failed to configure trigger for {r.Name}", ex); }
+                            try 
+                            { 
+                                existing.Configure(cfg); 
+                                _triggerConfig[r.Id] = cfg; 
+                            } 
+                            catch (Exception ex) 
+                            { 
+                                _liveLogger.LogError($"Failed to re-configure trigger for {r.Name}", ex); 
+                            }
                         }
                     }
                     else
@@ -219,124 +218,136 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
                         var trig = TriggerFactory.Create(r.Type);
                         if (trig != null)
                         {
-                            try { trig.Configure(cfg); _triggerCache[r.Id] = trig; _triggerConfig[r.Id] = cfg; }
-                            catch (Exception ex) { _liveLogger.LogError($"Failed to create/config trigger for {r.Name}", ex); }
+                            try 
+                            { 
+                                trig.Configure(cfg); 
+                                
+                                // NEW: If the trigger's condition is ALREADY met upon creation,
+                                // we treat it as having "fired" so it waits for the next occurrence.
+                                if (trig.IsEnabled && await trig.ShouldFireAsync())
+                                {
+                                    trig.OnFired();
+                                }
+
+                                _triggerCache[r.Id] = trig; 
+                                _triggerConfig[r.Id] = cfg; 
+                            } 
+                            catch (Exception ex)
+                            {
+                                _liveLogger.LogError($"Failed to create or initial-configure trigger for {r.Name}", ex);
+                            }
                         }
                     }
                 }
 
-                // Remove triggers for routines no longer active
+                // 2. Cleanup stale triggers
                 foreach (var key in _triggerCache.Keys)
                 {
                     if (!activeSet.Contains(key))
                     {
-                        if (_triggerCache.TryRemove(key, out var t))
-                        {
-                            try { t.Dispose(); } catch { }
-                            _triggerConfig.TryRemove(key, out _);
+                        if (_triggerCache.TryRemove(key, out var t)) 
+                        { 
+                            try { t.Dispose(); } catch { } 
+                            _triggerConfig.TryRemove(key, out _); 
                         }
                     }
                 }
 
-                // Evaluate triggers and dispatch executions without blocking the loop
+                // 3. Evaluate and Fire
                 foreach (var r in active)
                 {
                     if (ct.IsCancellationRequested) break;
-
-                    // Prevent overlapping execution: create per-run CTS linked to engine token
+                    
+                    // Don't fire if already running
                     if (_runningCts.ContainsKey(r.Id)) continue;
+                    
+                    if (!_triggerCache.TryGetValue(r.Id, out var trigger)) continue;
 
-                    var perRunCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                    if (!_runningCts.TryAdd(r.Id, perRunCts))
+                    if (trigger.IsEnabled && await trigger.ShouldFireAsync() && !trigger.HasFired)
                     {
-                        perRunCts.Dispose();
-                        continue;
+                        // Check concurrency limit before dispatching
+                        if (_runningCts.Count >= MaxConcurrencyLimit)
+                        {
+                            _liveLogger.LogWarning($"Routine '{r.Name}' trigger skipped: Max concurrency limit ({MaxConcurrencyLimit}) reached.");
+                            continue;
+                        }
+
+                        trigger.OnFired();
+                        _liveLogger.LogInfo($"Trigger fired: {r.Name}");
+                        
+                        // Execute via fire-and-forget task
+                        _ = DispatchExecutionAsync(r, ct);
                     }
-
-                    // Execute asynchronously so loop keeps ticking
-                    _ = Task.Run(async () =>
-                    {
-                        Exception? error = null;
-                        var sw = Stopwatch.StartNew();
-                        LogStatus status = LogStatus.Success;
-                        string message = string.Empty;
-                        try
-                        {
-                            if (!_triggerCache.TryGetValue(r.Id, out var trigger))
-                            {
-                                _liveLogger.LogWarning($"No trigger instance for routine {r.Name}");
-                                return;
-                            }
-
-                            if (trigger.IsEnabled && trigger.ShouldFire())
-                            {
-                                trigger.OnFired();
-                                _liveLogger.LogInfo($"Trigger fired for routine {r.Name}");
-
-                                // Execute via ActionRunner resolved from a scope to obtain transient IAction implementations
-                                try
-                                {
-                                    using var scope = _scopeFactory.CreateScope();
-                                    var runner = scope.ServiceProvider.GetRequiredService<ActionRunner>();
-                                    var ctx = new ActionContext { RoutineName = r.Name, TriggerTime = DateTime.UtcNow, TriggerData = new Dictionary<string, object?>(), IsManualTrigger = false };
-                                    await runner.RunAsync(r.Actions, ctx, perRunCts.Token).ConfigureAwait(false);
-                                    message = $"Executed {r.Actions.Count} actions.";
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                    status = LogStatus.Warning;
-                                    message = "Execution cancelled.";
-                                    _liveLogger.LogWarning($"Routine {r.Name} execution was cancelled.");
-                                }
-                                catch (Exception ex)
-                                {
-                                    status = LogStatus.Error;
-                                    message = ex.Message;
-                                    error = ex;
-                                    _liveLogger.LogError($"Error executing routine {r.Name}", ex);
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            sw.Stop();
-                            try
-                            {
-                                await PersistLogAsync(new ActivityLogDto
-                                {
-                                    Id = r.Id,
-                                    RoutineName = r.Name,
-                                    Status = status,
-                                    Message = message,
-                                    ExecutedAt = DateTime.UtcNow,
-                                    RelativeTime = "now",
-                                    DurationSeconds = (int)sw.Elapsed.TotalSeconds
-                                });
-                            }
-                            catch (Exception ex)
-                            {
-                                _liveLogger.LogError("Failed to persist execution log", ex);
-                            }
-
-                            // Fire completion event
-                            RoutineCompleted?.Invoke(this, new RoutineCompletedEventArgs(r.Id, error == null, error));
-
-                            // Remove running token
-                            if (_runningCts.TryRemove(r.Id, out var existingCts))
-                            {
-                                try { existingCts.Dispose(); } catch { }
-                            }
-                        }
-                    }, perRunCts.Token);
                 }
             }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex)
-            {
-                _liveLogger.LogError("Engine loop error", ex);
-            }
+            catch (Exception ex) { _liveLogger.LogError("Engine heartbeat error", ex); }
 
             try { await Task.Delay(1000, ct); } catch (TaskCanceledException) { break; }
+        }
+    }
+
+    private async Task DispatchExecutionAsync(RuntimeRoutine routine, CancellationToken ct)
+    {
+        // Verify concurrency guard
+        if (_runningCts.Count >= MaxConcurrencyLimit) return;
+
+        var perRunCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (!_runningCts.TryAdd(routine.Id, perRunCts))
+        {
+            perRunCts.Dispose();
+            return;
+        }
+
+        Exception? error = null;
+        var sw = Stopwatch.StartNew();
+        LogStatus status = LogStatus.Success;
+        string message = string.Empty;
+
+        try
+        {
+            using (var runScope = _scopeFactory.CreateScope())
+            {
+                var runner = runScope.ServiceProvider.GetRequiredService<ActionRunner>();
+                var ctx = new ActionContext { RoutineName = routine.Name, TriggerTime = DateTime.UtcNow, TriggerData = new Dictionary<string, object?>(), IsManualTrigger = false };
+                await runner.RunAsync(routine.Actions, ctx, perRunCts.Token).ConfigureAwait(false);
+                message = $"Executed {routine.Actions.Count} actions.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            status = LogStatus.Warning;
+            message = "Execution cancelled.";
+        }
+        catch (Exception ex)
+        {
+            status = LogStatus.Error;
+            message = ex.Message;
+            error = ex;
+            _liveLogger.LogError($"Error in routine {routine.Name}", ex);
+        }
+        finally
+        {
+            sw.Stop();
+            try
+            {
+                await PersistLogAsync(new ActivityLogDto
+                {
+                    Id = Guid.NewGuid(),
+                    RoutineName = routine.Name,
+                    Status = status,
+                    Message = message,
+                    ExecutedAt = DateTime.UtcNow,
+                    RelativeTime = "now",
+                    DurationSeconds = (int)sw.Elapsed.TotalSeconds
+                }).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _liveLogger.LogError($"Failed to persist log for {routine.Name}", ex);
+            }
+
+            RoutineCompleted?.Invoke(this, new RoutineCompletedEventArgs(routine.Id, error == null, error));
+            if (_runningCts.TryRemove(routine.Id, out var existingCts)) { try { existingCts.Dispose(); } catch { } }
         }
     }
 
@@ -378,12 +389,7 @@ public sealed class AutomationEngine : IAutomationEngine, IDisposable
 
     public void Dispose()
     {
-        foreach (var kv in _triggerCache)
-        {
-            try { kv.Value.Dispose(); } catch { }
-        }
-        _triggerCache.Clear();
-        _triggerConfig.Clear();
-        _cts.Dispose();
+        foreach (var kv in _triggerCache) { try { kv.Value.Dispose(); } catch { } }
+        _triggerCache.Clear(); _triggerConfig.Clear(); _cts.Dispose();
     }
 }

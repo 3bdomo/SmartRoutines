@@ -9,7 +9,7 @@ namespace SmartRoutines.Logic.TriggerMonitors
     /// </summary>
     public abstract class BaseTrigger : ITrigger
     {
-        protected bool HasFired { get; set; } = false;
+        public virtual bool HasFired { get; protected set; } = false;
 
         /// <inheritdoc />
         public bool IsEnabled { get; set; } = true;
@@ -21,7 +21,10 @@ namespace SmartRoutines.Logic.TriggerMonitors
         public virtual void Configure(string json) { }
 
         /// <inheritdoc />
-        public abstract bool ShouldFire();
+        public abstract Task<bool> ShouldFireAsync();
+
+        /// <inheritdoc />
+        public virtual string GetDiagnosticInfo() => IsEnabled ? "Running" : "Disabled";
 
         /// <inheritdoc />
         public virtual void OnFired()
@@ -54,6 +57,7 @@ namespace SmartRoutines.Logic.TriggerMonitors
             try
             {
                 Config = JsonSerializer.Deserialize<TConfig>(json);
+                Reset(); // Always reset state (like HasFired) when configuration changes
             }
             catch (JsonException)
             {

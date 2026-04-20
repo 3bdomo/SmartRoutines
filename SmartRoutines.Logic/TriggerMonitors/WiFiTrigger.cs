@@ -1,50 +1,88 @@
-using System.Linq;
-using System.Management;
-using System.Text.Json;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 using SmartRoutines.Core.Domain.Models;
-using SmartRoutines.Core.Interfaces.Logic;
 
 namespace SmartRoutines.Logic.TriggerMonitors
 {
     public class WiFiTrigger : BaseTrigger<TriggerConfiguration>
     {
-        public override string DisplayName => $"Connects to WiFi: '{Config?.SsidName}'";
+        private static string _sharedCachedSsid = string.Empty;
+        private static DateTime _sharedLastUpdate = DateTime.MinValue;
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(2.0);
+        private static readonly object CacheLock = new();
 
-        public override bool ShouldFire()
+        public override string DisplayName => $"WiFi: {Config?.SsidName ?? "Any"}";
+
+        public override Task<bool> ShouldFireAsync()
         {
-            if (!IsEnabled || Config == null || string.IsNullOrWhiteSpace(Config.SsidName)) return false;
+            if (!IsEnabled || Config == null || string.IsNullOrWhiteSpace(Config.SsidName)) return Task.FromResult(false);
 
-            string currentSsid = GetCurrentSsid();
+            string currentSsid = GetSsidWithCache().Trim();
+            string targetSsid = Config.SsidName.Trim();
 
-            if (currentSsid == Config.SsidName)
+            if (string.Equals(currentSsid, targetSsid, StringComparison.OrdinalIgnoreCase))
             {
-                if (!HasFired) return true;
+                if (!HasFired) return Task.FromResult(true);
             }
             else
             {
                 Reset();
             }
 
-            return false;
+            return Task.FromResult(false);
+        }
+
+        public override string GetDiagnosticInfo()
+        {
+            if (!IsEnabled) return "Disabled";
+            var current = GetSsidWithCache();
+            if (string.IsNullOrEmpty(current)) return "No WiFi connected";
+            return $"Connected to: '{current}'";
+        }
+
+        private string GetSsidWithCache()
+        {
+            lock (CacheLock)
+            {
+                if (DateTime.Now - _sharedLastUpdate > CacheTtl)
+                {
+                    _sharedCachedSsid = GetCurrentSsid();
+                    _sharedLastUpdate = DateTime.Now;
+                }
+                return _sharedCachedSsid;
+            }
         }
 
         private string GetCurrentSsid()
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM MSNdis_80211_ServiceSetIdentifier WHERE Active=True");
-                var activeConnection = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
-
-                if (activeConnection != null)
+                // FIGMA FIX: Using netsh instead of ManagementObjectSearcher as it doesn't require Admin privileges
+                var process = new Process
                 {
-                    var ssidBytes = (byte[])activeConnection["Ndis80211SsId"];
-                    var ssid = System.Text.Encoding.ASCII.GetString(ssidBytes).Trim('\0');
-                    return ssid;
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "netsh",
+                        Arguments = "wlan show interfaces",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
+                    }
+                };
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                // Look for the "SSID : Name" line
+                var match = Regex.Match(output, @"^\s+SSID\s+:\s+(.*)$", RegexOptions.Multiline);
+                if (match.Success)
+                {
+                    return match.Groups[1].Value.Trim();
                 }
             }
             catch
             {
-                // Silently ignore WMI permission errors
+                // Silently ignore errors
             }
             return string.Empty;
         }

@@ -36,7 +36,7 @@ namespace SmartRoutines.UI.Forms
         private Label _lblContentSubtitle = null!;
 
         // Page caching to eliminate 5-10s load times
-        private readonly System.Collections.Generic.Dictionary<Type, UserControl> _pageCache = new();
+        private readonly Dictionary<Type, UserControl> _pageCache = new();
 
         private readonly IServiceProvider _serviceProvider;
         // Only reload dashboard data after a routine is saved — not on every navigation
@@ -191,7 +191,7 @@ namespace SmartRoutines.UI.Forms
 
             if (WindowState == FormWindowState.Minimized)
             {
-                MinimizeToTray();
+                // Removed MinimizeToTray() to follow Windows standard taskbar behavior
                 return;
             }
 
@@ -203,10 +203,10 @@ namespace SmartRoutines.UI.Forms
         // ─── Background page warm-up ───────────────────────────────────────
         // Creates each page on the UI thread (WinForms requires it) but defers
         // the work to after the window has painted its first frame.
-        private async System.Threading.Tasks.Task WarmUpPagesAsync()
+        private async Task WarmUpPagesAsync()
         {
             // Yield so the first frame renders fully before we start constructing pages.
-            await System.Threading.Tasks.Task.Delay(300);
+            await Task.Delay(300);
 
             if (this.IsDisposed) return;
 
@@ -380,16 +380,7 @@ namespace SmartRoutines.UI.Forms
             DisplayPage<Controls.UC_Settings>();
         }
 
-        private void btnClose_Click(object sender, EventArgs e) => Application.Exit();
-
-        private void btnMaximize_Click(object sender, EventArgs e)
-        {
-            WindowState = WindowState == FormWindowState.Maximized
-                ? FormWindowState.Normal
-                : FormWindowState.Maximized;
-        }
-
-        private void btnMinimize_Click(object sender, EventArgs e) => WindowState = FormWindowState.Minimized;
+        // Window Control handlers previously here are now handled natively by Guna2ControlBox.
 
         // ─── Create New Routine button (FIX: was referenced but never defined) ─
         private void btnCreateNew_Click(object sender, EventArgs e)
@@ -425,10 +416,12 @@ namespace SmartRoutines.UI.Forms
             pnlHeader.BorderColor = SmartTheme.Border;
             pnlHeader.Height = 36; // FIX: match Figma thin title bar (was 60)
 
-            // Style the designer's existing window buttons
-            StyleWindowButton(btnClose, "✕", SmartTheme.Danger);
-            StyleWindowButton(btnMaximize, "□", SmartTheme.TextSecondary);
-            StyleWindowButton(btnMinimize, "─", SmartTheme.TextSecondary);
+            // Style the new standard control boxes
+            controlBoxClose.HoverState.FillColor = Color.FromArgb(232, 17, 35); // Windows standard Red
+            controlBoxClose.HoverState.IconColor = Color.White;
+            
+            controlBoxMaximize.HoverState.FillColor = Color.FromArgb(45, 45, 45);
+            controlBoxMinimize.HoverState.FillColor = Color.FromArgb(45, 45, 45);
 
             // Tiny title label already in designer
             lblAppTitle.Font = SmartTheme.FontSmallBold;
@@ -745,17 +738,8 @@ namespace SmartRoutines.UI.Forms
             btn.HoverState.ForeColor = SmartTheme.TextPrimary;
         }
 
-        private static void StyleWindowButton(Guna2Button btn, string symbol, Color fg)
-        {
-            btn.Text = symbol;
-            btn.FillColor = Color.Transparent;
-            btn.ForeColor = fg;
-            // Use a larger, symbol-friendly font so ✕ □ ─ render visibly
-            btn.Font = new Font("Segoe UI", 13f, FontStyle.Regular);
-            btn.BorderRadius = 4;
-            btn.Animated = true;
-            btn.HoverState.FillColor = SmartTheme.Surface2;
-        }
+        // StyleWindowButton is no longer needed with Guna2ControlBox.
+
 
         // ─── Sidebar animation ─────────────────────────────────────────────
         private void btnSidebarCollapse_Click(object sender, EventArgs e)

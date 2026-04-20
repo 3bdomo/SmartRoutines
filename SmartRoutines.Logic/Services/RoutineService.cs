@@ -14,6 +14,7 @@ namespace SmartRoutines.Logic.Services;
 public class RoutineService : IRoutineService
 {
     private readonly IUnitOfWork _uow;
+    private static readonly SemaphoreSlim _dbLock = new(1, 1);
 
     public RoutineService(IUnitOfWork uow)
     {
@@ -23,19 +24,27 @@ public class RoutineService : IRoutineService
     /// <inheritdoc />
     public async Task<IReadOnlyList<RoutineCardDto>> GetAllCardsAsync()
     {
-        var routines = await _uow.Routines.GetAllAsync();
-        return routines.Select(r => new RoutineCardDto
+        await _dbLock.WaitAsync();
+        try
         {
-            Id = r.Id,
-            Name = r.Name,
-            Description = r.Description,
-            IconPath = r.IconPath,
-            TriggerSummary = r.TriggerType.ToString(),
-            ActionCount = r.Actions.Count,
-            IsActive = r.IsActive,
-            IsRunningNow = false,
-            LastRunRelativeTime = string.Empty
-        }).ToList();
+            var routines = await _uow.Routines.GetAllAsync();
+            return routines.Select(r => new RoutineCardDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IconPath = r.IconPath,
+                TriggerSummary = r.TriggerType.ToString(),
+                ActionCount = r.Actions.Count,
+                IsActive = r.IsActive,
+                IsRunningNow = false,
+                LastRunRelativeTime = string.Empty
+            }).ToList();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     /// <inheritdoc />

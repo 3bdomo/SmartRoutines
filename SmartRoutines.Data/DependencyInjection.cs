@@ -27,14 +27,11 @@ namespace SmartRoutines.Data
 
             services.AddDbContext<SmartRoutinesDbContext>(options =>
             {
-                options.UseSqlServer(connectionString, sqlOptions =>
-                {
-                    sqlOptions.EnableRetryOnFailure();
-                });
-            });
+                options.UseSqlServer(connectionString);
+            }, ServiceLifetime.Transient);
 
-            // Register the UnitOfWork as scoped so the same DbContext is shared across repositories within a unit of work.
-            services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+            // Register the UnitOfWork as transient so each service gets its own fresh instance and isolated DbContext.
+            services.AddTransient<IUnitOfWork, UnitOfWork.UnitOfWork>();
 
             return services;
         }
