@@ -36,6 +36,11 @@ public interface IAutomationEngine
     Task ExecuteManualAsync(Guid routineId);
 
     /// <summary>
+    /// Cancels a running routine manually.
+    /// </summary>
+    void StopRoutine(Guid routineId);
+
+    /// <summary>
     /// Returns real-time diagnostic information for a specific routine's trigger.
     /// </summary>
     string GetRoutineDiagnostic(Guid routineId);
