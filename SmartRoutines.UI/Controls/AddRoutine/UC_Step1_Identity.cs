@@ -1,5 +1,4 @@
 
-
 using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls.AddRoutine;
@@ -198,6 +197,20 @@ public class UC_Step1_Identity : SmartUserControl
 			card.BorderStyle = isSelected ? BorderStyle.FixedSingle : BorderStyle.FixedSingle;
 			foreach (Control c in card.Controls)
 				c.ForeColor = isSelected ? SmartTheme.Primary : SmartTheme.TextSecondary;
+		}
+	}
+
+	public void SetData(string name, string description, string iconKey)
+	{
+		_txtRoutineName.Text = name;
+		_txtRoutineName.ForeColor = SmartTheme.TextPrimary;
+
+		_txtDescription.Text = string.IsNullOrWhiteSpace(description) ? "Describe what this routine does..." : description;
+		_txtDescription.ForeColor = string.IsNullOrWhiteSpace(description) ? SmartTheme.TextSecondary : SmartTheme.TextPrimary;
+
+		if (_icons.ContainsKey(iconKey))
+		{
+			SelectIcon(iconKey);
 		}
 	}
 }

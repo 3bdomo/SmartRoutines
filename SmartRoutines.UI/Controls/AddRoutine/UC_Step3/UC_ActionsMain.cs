@@ -20,6 +20,7 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
         private readonly IRoutineService _routineService;
         private int _currentStep = 1;
         private bool _isSaving;
+        private Guid? _editingRoutineId;
 
         public UC_ActionsMain(IRoutineService routineService)
         {
@@ -146,6 +147,7 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 
             var dto = new UpsertRoutineDto
             {
+                Id = _editingRoutineId,
                 Name = name,
                 Description = desc,
                 IconPath = _step1.SelectedIconKey,
@@ -164,7 +166,8 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
 
                 if (main != null)
                 {
-                    main.ShowToast($"Routine '{name}' created successfully");
+                    string actionStr = _editingRoutineId.HasValue ? "updated" : "created";
+                    main.ShowToast($"Routine '{name}' {actionStr} successfully");
                     main.RequestDashboardRefresh();
                     main.DisplayPage<UC_Dashboard>();
                 }
@@ -197,6 +200,16 @@ namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3
             {
                 main.DisplayPage<UC_Dashboard>();
             }
+        }
+        public async Task LoadRoutineForEdit(Guid id)
+        {
+            _editingRoutineId = id;
+            var routine = await _routineService.GetForEditAsync(id);
+            if (routine == null) return;
+
+            _step1.SetData(routine.Name, routine.Description, routine.IconPath ?? "sunrise");
+            _step2.SetData(routine.TriggerType, routine.TriggerConfig);
+            _step3.SetData(routine.Actions);
         }
     }
 }

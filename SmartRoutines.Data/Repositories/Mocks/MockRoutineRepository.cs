@@ -63,7 +63,7 @@ namespace SmartRoutines.Data.Repositories
             var existing = _routines.FirstOrDefault(r => r.Id == routine.Id);
             if (existing != null)
             {
-                existing.UpdateDetails(routine.Name, routine.Description, routine.IconPath);
+                existing.UpdateDetails(routine.Name, routine.Description, routine.IconPath, routine.TriggerType, routine.TriggerConfig);
             }
         }
     }

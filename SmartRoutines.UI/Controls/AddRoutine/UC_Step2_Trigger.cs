@@ -36,27 +36,6 @@ public class UC_Step2_Trigger : SmartUserControl
 		this.Resize += (s, e) => UpdateLayoutPositions();
 	}
 
-	//public string GetTriggerConfigJson()
-	//{
-	//	var config = new TriggerConfiguration { TriggerType = _selectedTriggerType };
-
-	//	switch (_selectedTriggerType)
-	//	{
-	//		case TriggerType.Time:
-	//			config.TriggerTime = _dtpTime.Value.TimeOfDay;
-	//			config.DaysOfWeek = _selectedDays;
-	//			break;
-	//		case TriggerType.AppLaunched:
-	//			config.ApplicationName = _txtAppName.Text;
-	//			break;
-	//		case TriggerType.FileChanged:
-	//			config.FilePath = _txtFilePath.Text;
-	//			break;
-	//	}
-
-	//	return TriggerConfigurationParser.ToJson(config);
-	//}
-
 	private void InitializeComponents()
 	{
 		this.BackColor = SmartTheme.Background;
@@ -69,7 +48,7 @@ public class UC_Step2_Trigger : SmartUserControl
 			BorderStyle = BorderStyle.FixedSingle
 		};
 
-		// 2. Cards Grid (سيكون فوق الـ Config)
+		// 2. Cards Grid
 		_cardsGrid = new TableLayoutPanel
 		{
 			ColumnCount = 2,
@@ -167,7 +146,9 @@ public class UC_Step2_Trigger : SmartUserControl
 		{
 			bool isSel = (c == selectedCard);
 			c.BackColor = isSel ? SmartTheme.Background : SmartTheme.Background;
-			c.Controls[0].ForeColor = isSel ? SmartTheme.Primary : SmartTheme.TextPrimary;
+			c.BorderStyle = isSel ? BorderStyle.FixedSingle : BorderStyle.FixedSingle;
+			// c.Controls[0] is lblIcon
+			c.Controls[0].ForeColor = isSel ? SmartTheme.Primary : SmartTheme.TextSecondary;
 		}
 
 		_configContainer.Controls.Clear();
@@ -245,4 +226,48 @@ public class UC_Step2_Trigger : SmartUserControl
 
 		return System.Text.Json.JsonSerializer.Serialize(config);
 	}
+
+    public void SetData(TriggerType type, string configJson)
+    {
+        try
+        {
+            var config = System.Text.Json.JsonSerializer.Deserialize<SmartRoutines.Core.Domain.Models.TriggerConfiguration>(configJson);
+            if (config == null) return;
+
+            // Find and select card
+            var card = _allCards.FirstOrDefault(c => (TriggerType)c.Tag! == type);
+            if (card != null)
+            {
+                SelectCard(card, type);
+            }
+
+            // Populate values
+            _dtpTime.Value = config.ScheduledTime;
+            _selectedDays = (int)config.RepeatDays;
+
+            // Update days buttons
+            var flowD = _timeCfg.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
+            if (flowD != null)
+            {
+                for (int i = 0; i < 7; i++)
+                {
+                    if (flowD.Controls[i] is Button btn)
+                    {
+                        int bit = 1 << i;
+                        btn.BackColor = (_selectedDays & bit) != 0 ? SmartTheme.Primary : SmartTheme.Surface3;
+                    }
+                }
+            }
+
+            if (type == TriggerType.AppLaunched)
+            {
+                _txtAppName.Text = config.SsidName;
+            }
+            else if (type == TriggerType.FileChanged)
+            {
+                _txtFilePath.Text = config.SsidName;
+            }
+        }
+        catch { /* ignore invalid json */ }
+    }
 }

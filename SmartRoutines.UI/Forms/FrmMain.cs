@@ -246,7 +246,7 @@ namespace SmartRoutines.UI.Forms
         // ─── Page Navigation ───────────────────────────────────────────────
         private UserControl? _currentPage;
 
-        public void DisplayPage<T>() where T : UserControl
+        public void DisplayPage<T>(Action<T>? initializer = null) where T : UserControl
         {
             Type pageType = typeof(T);
 
@@ -257,7 +257,11 @@ namespace SmartRoutines.UI.Forms
             }
 
             // 2. Get or create page (handles caching and DI)
-            _currentPage = GetPage<T>();
+            var page = GetPage<T>();
+            _currentPage = page;
+
+            // 3. Initialize if needed
+            initializer?.Invoke(page);
 
             _currentPage.Visible = true;
             _currentPage.BringToFront();

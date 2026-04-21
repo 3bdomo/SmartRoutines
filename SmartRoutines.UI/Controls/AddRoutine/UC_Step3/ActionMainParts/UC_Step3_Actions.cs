@@ -1,4 +1,4 @@
-﻿using Guna.UI2.WinForms;
+using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 
 namespace SmartRoutines.UI.Controls.AddRoutine.UC_Step3.ActionMainParts;
@@ -416,5 +416,47 @@ public partial class UC_Step3_Actions : SmartUserControl
 
         AddSelectedTemplateAsBlock();
     }
-}
 
+    public void SetData(IEnumerable<SmartRoutines.Core.DTOs.ActionDto> actions)
+    {
+        ClearActions();
+        foreach (var adto in actions.OrderBy(a => a.ExecutionOrder))
+        {
+            ActionTemplate? template = null;
+            switch (adto.Type)
+            {
+                case SmartRoutines.Core.Domain.Enums.ActionType.LaunchApp:
+                    template = _templates.FirstOrDefault(t => t.Title == "Launch Application");
+                    break;
+                case SmartRoutines.Core.Domain.Enums.ActionType.OpenUrl:
+                    template = _templates.FirstOrDefault(t => t.Title == "Open URL");
+                    break;
+                case SmartRoutines.Core.Domain.Enums.ActionType.SetVolume:
+                    template = _templates.FirstOrDefault(t => t.Title == "Mute/Unmute Audio");
+                    break;
+                case SmartRoutines.Core.Domain.Enums.ActionType.RunCommand:
+                    template = _templates.FirstOrDefault(t => t.Title == "Run Command");
+                    break;
+                case SmartRoutines.Core.Domain.Enums.ActionType.KillProcess:
+                    template = _templates.FirstOrDefault(t => t.Title == "Close Application");
+                    break;
+            }
+
+            if (template != null)
+            {
+                var block = AddActionBlock(template.Mode, template.Title, template.IconText, template.PlaceholderText);
+                if (template.Mode == ActionBlockInputMode.TextInput)
+                {
+                    block.InputText = adto.Arguments;
+                }
+                else if (template.Mode == ActionBlockInputMode.Slider)
+                {
+                    if (int.TryParse(adto.Arguments, out int val))
+                    {
+                        block.SliderValue = val;
+                    }
+                }
+            }
+        }
+    }
+}

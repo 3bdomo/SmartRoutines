@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Exceptions;
 
 namespace SmartRoutines.Core.Domain.Entities
@@ -118,11 +118,19 @@ namespace SmartRoutines.Core.Domain.Entities
         /// </summary>
         /// <param name="name">New name for the routine.</param>
         /// <param name="iconPath">New icon path.</param>
-        public void UpdateDetails(string name, string description, string iconPath)
+        public void UpdateDetails(string name, string description, string iconPath, TriggerType triggerType, string triggerConfig)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new BusinessRuleException("Routine name cannot be null or empty.");
+
+            if (string.IsNullOrWhiteSpace(triggerConfig))
+                throw new BusinessRuleException("Trigger configuration cannot be empty.");
+
             Name = name;
             Description = description;
             IconPath = iconPath;
+            TriggerType = triggerType;
+            TriggerConfig = triggerConfig;
             UpdatedAt = DateTime.UtcNow;
         }
     }

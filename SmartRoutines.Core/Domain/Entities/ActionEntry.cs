@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Enums;
 using SmartRoutines.Core.Exceptions;
 
 namespace SmartRoutines.Core.Domain.Entities
@@ -58,7 +58,7 @@ namespace SmartRoutines.Core.Domain.Entities
         /// <value>The parent <see cref="Routine"/> object, or <c>null</c> if not explicitly loaded (Lazy/Explicit Loading).</value>
         public Routine? Routine { get; private set; }
 
-        private ActionEntry() { } // Private parameterless constructor for EF Core
+        private ActionEntry() { Arguments = null!; } // Private parameterless constructor for EF Core
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ActionEntry"/> class with strict validation.
@@ -81,6 +81,20 @@ namespace SmartRoutines.Core.Domain.Entities
             Type = type;
             Arguments = arguments;
             ExecutionOrder = executionOrder;
+        }
+
+        public void UpdateDetails(ActionType type, string arguments, int executionOrder)
+        {
+            if (arguments == null)
+                throw new BusinessRuleException("Action arguments cannot be null.");
+
+            if (executionOrder < 1)
+                throw new BusinessRuleException("Execution order must be 1 or greater.");
+
+            Type = type;
+            Arguments = arguments;
+            ExecutionOrder = executionOrder;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

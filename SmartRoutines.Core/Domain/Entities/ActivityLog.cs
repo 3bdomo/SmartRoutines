@@ -1,4 +1,4 @@
-﻿using SmartRoutines.Core.Domain.Enums;
+using SmartRoutines.Core.Domain.Enums;
 
 namespace SmartRoutines.Core.Domain.Entities
 {
@@ -50,7 +50,7 @@ namespace SmartRoutines.Core.Domain.Entities
         /// <value>A string up to 500 characters.</value>
         public string Message { get; private set; }
 
-        private ActivityLog() { } // Private parameterless constructor for EF Core
+        private ActivityLog() { RoutineName = null!; Message = null!; } // Private parameterless constructor for EF Core
 
         /// <summary>
         /// Initializes a new, immutable instance of the <see cref="ActivityLog"/> class.

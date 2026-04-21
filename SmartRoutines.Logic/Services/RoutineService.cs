@@ -72,61 +72,63 @@ public class RoutineService : IRoutineService
     /// <inheritdoc />
     public async Task<Guid> SaveAsync(UpsertRoutineDto dto)
     {
-        // Validation
-        if (!await _uow.Routines.IsNameUniqueAsync(dto.Name, dto.Id))
-            throw new DuplicateRoutineNameException(dto.Name);
-
-        Routine? entity = null;
-        if (dto.Id.HasValue)
+        await _dbLock.WaitAsync();
+        try
         {
-            entity = await _uow.Routines.GetByIdAsync(dto.Id.Value);
-            if (entity == null)
-                throw new RoutineNotFoundException(dto.Id.Value);
-            // update fields
-            entity.UpdateDetails(dto.Name, dto.Description, dto.IconPath ?? string.Empty);
-        }
-        else
-        {
-            entity = new Routine(dto.Name, dto.Description ?? string.Empty, dto.IconPath ?? string.Empty, dto.TriggerType, dto.TriggerConfig);
-            await _uow.Routines.AddAsync(entity);
-        }
+            // Validation
+            if (!await _uow.Routines.IsNameUniqueAsync(dto.Name, dto.Id))
+                throw new DuplicateRoutineNameException(dto.Name);
 
-        // Sync actions: existing vs dto
-        // Build maps
-        var existingActions = entity.Actions.ToDictionary(a => a.Id);
-        var dtoByOrder = dto.Actions.OrderBy(a => a.ExecutionOrder).ToList();
-
-        // Remove actions not present
-        foreach (var existing in existingActions.Values)
-        {
-            if (!dtoByOrder.Any(d => d.ExecutionOrder == existing.ExecutionOrder))
+            Routine? entity = null;
+            if (dto.Id.HasValue)
             {
-                entity.RemoveAction(existing);
-            }
-        }
-
-        // Add or update
-        foreach (var adto in dtoByOrder)
-        {
-            var match = entity.Actions.FirstOrDefault(a => a.ExecutionOrder == adto.ExecutionOrder);
-            if (match != null)
-            {
-                // update via replace: here domain probably has methods; using UpdateDetails on routine to persist changes
-                match = new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder);
-                // can't directly replace in EF tracked collection so remove and add
-                entity.RemoveAction(entity.Actions.First(a => a.ExecutionOrder == adto.ExecutionOrder));
-                entity.AddAction(match);
+                entity = await _uow.Routines.GetByIdWithActionsAsync(dto.Id.Value);
+                if (entity == null)
+                    throw new RoutineNotFoundException(dto.Id.Value);
+                // update fields
+                entity.UpdateDetails(dto.Name, dto.Description, dto.IconPath ?? string.Empty, dto.TriggerType, dto.TriggerConfig);
             }
             else
             {
-                entity.AddAction(new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder));
+                entity = new Routine(dto.Name, dto.Description ?? string.Empty, dto.IconPath ?? string.Empty, dto.TriggerType, dto.TriggerConfig);
+                await _uow.Routines.AddAsync(entity);
             }
+
+            // Sync actions: existing vs dto
+            var existingActions = entity.Actions.ToDictionary(a => a.ExecutionOrder);
+            var dtoByOrder = dto.Actions.OrderBy(a => a.ExecutionOrder).ToList();
+
+            // 1. Remove actions not in DTO (by order)
+            var dtoOrders = dtoByOrder.Select(d => d.ExecutionOrder).ToHashSet();
+            foreach (var existing in entity.Actions.ToList())
+            {
+                if (!dtoOrders.Contains(existing.ExecutionOrder))
+                {
+                    entity.RemoveAction(existing);
+                }
+            }
+
+            // 2. Add or Update
+            foreach (var adto in dtoByOrder)
+            {
+                if (existingActions.TryGetValue(adto.ExecutionOrder, out var existing))
+                {
+                    existing.UpdateDetails(adto.Type, adto.Arguments, adto.ExecutionOrder);
+                }
+                else
+                {
+                    entity.AddAction(new ActionEntry(entity.Id, adto.Type, adto.Arguments, adto.ExecutionOrder));
+                }
+            }
+
+            // Persist
+            await _uow.SaveChangesAsync();
+            return entity.Id;
         }
-
-        // Persist
-        await _uow.SaveChangesAsync();
-
-        return entity.Id;
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     /// <inheritdoc />

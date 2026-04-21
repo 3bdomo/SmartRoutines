@@ -287,11 +287,14 @@ namespace SmartRoutines.UI.Controls
             UpdateStateStyle();
         }
 
-        private void BtnEdit_Click(object? sender, EventArgs e)
+        private async void BtnEdit_Click(object? sender, EventArgs e)
         {
             if (this.FindForm() is SmartRoutines.UI.Forms.FrmMain main)
             {
-                main.DisplayPage<UC_ActionsMain>();
+                main.DisplayPage<UC_ActionsMain>(async wizard => 
+                {
+                    await wizard.LoadRoutineForEdit(this.Id);
+                });
             }
         }
 

@@ -10,6 +10,7 @@ using SmartRoutines.Core.DTOs;
 using System.Threading.Tasks;
 using SmartRoutines.UI.Core.Helper;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
+using SmartRoutines.UI.Forms;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -242,13 +243,8 @@ namespace SmartRoutines.UI.Controls
         // ─── Card event handlers ──────────────────────────────────────────────
         private async Task OnCardDeleteRequestedAsync(UC_RoutineCard card)
         {
-            var result = MessageBox.Show(
-                $"Are you sure you want to delete \"{card.RoutineName}\"?",
-                "Delete Routine",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-
-            if (result != DialogResult.Yes) return;
+            bool confirmed = FrmConfirmDelete.Show(card.RoutineName, this.FindForm());
+            if (!confirmed) return;
 
             try
             {
