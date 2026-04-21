@@ -262,7 +262,7 @@ namespace SmartRoutines.UI.Controls
         // ─── Card event handlers ──────────────────────────────────────────────
         private async Task OnCardDeleteRequestedAsync(UC_RoutineCard card)
         {
-            bool confirmed = FrmConfirmDelete.Show(card.RoutineName, this.FindForm());
+            bool confirmed = FrmConfirmDelete.Show(card.RoutineName, this.FindForm() ?? Application.OpenForms[0]);
             if (!confirmed) return;
 
             try

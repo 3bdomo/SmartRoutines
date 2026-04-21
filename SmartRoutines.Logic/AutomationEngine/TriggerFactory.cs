@@ -23,6 +23,8 @@ internal static class TriggerFactory
             TriggerType.Startup => new StartupTrigger(),
             TriggerType.Shutdown => new ShutdownTrigger(),
             TriggerType.Idle => new IdleTrigger(),
+            TriggerType.AppLaunched => new AppLaunchedTrigger(),
+            TriggerType.FileChanged => new FileChangedTrigger(),
             _ => null
         };
 }

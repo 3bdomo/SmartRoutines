@@ -15,7 +15,8 @@ namespace SmartRoutines.Logic.TriggerMonitors
 
         public override Task<bool> ShouldFireAsync()
         {
-            if (!IsEnabled || Config == null) return Task.FromResult(false);
+            if (!IsEnabled || Config == null || !Config.IdleMinutes.HasValue) 
+                return Task.FromResult(false);
 
             var lastInput = new NativeMethods.LASTINPUTINFO();
             lastInput.cbSize = (uint)Marshal.SizeOf(lastInput);
@@ -29,7 +30,7 @@ namespace SmartRoutines.Logic.TriggerMonitors
 
                 _lastIdleInfo = $"{Math.Floor(idleTime.TotalMinutes)}m {idleTime.Seconds}s";
 
-                if (idleTime.TotalMinutes >= Config.IdleMinutes)
+                if (idleTime.TotalMinutes >= Config.IdleMinutes.Value)
                 {
                     if (!HasFired) return Task.FromResult(true);
                 }

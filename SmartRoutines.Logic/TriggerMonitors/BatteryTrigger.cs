@@ -13,21 +13,22 @@ namespace SmartRoutines.Logic.TriggerMonitors
 
         public override Task<bool> ShouldFireAsync()
         {
-            if (!IsEnabled || Config == null) return Task.FromResult(false);
+            if (!IsEnabled || Config == null || !Config.BatteryThreshold.HasValue) 
+                return Task.FromResult(false);
 
             if (NativeMethods.GetSystemPowerStatus(out var status))
             {
                 _lastStatus = $"{status.BatteryLifePercent}% ({(status.ACLineStatus == 1 ? "Plugged in" : "Battery")})";
 
                 // Reset flag if battery goes above threshold
-                if (status.BatteryLifePercent > Config.BatteryThreshold)
+                if (status.BatteryLifePercent > Config.BatteryThreshold.Value)
                 {
                     Reset();
                     return Task.FromResult(false);
                 }
 
                 // Fire if battery is <= threshold, hasn't fired yet, AND not plugged in (ACLineStatus == 0)
-                if (status.BatteryLifePercent <= Config.BatteryThreshold && !HasFired)
+                if (status.BatteryLifePercent <= Config.BatteryThreshold.Value && !HasFired)
                 {
                     if (status.ACLineStatus == 0)
                         return Task.FromResult(true);

@@ -50,23 +50,31 @@ public class RoutineService : IRoutineService
     /// <inheritdoc />
     public async Task<UpsertRoutineDto?> GetForEditAsync(Guid id)
     {
-        var r = await _uow.Routines.GetByIdWithActionsAsync(id);
-        if (r == null) return null;
-
-        return new UpsertRoutineDto
+        await _dbLock.WaitAsync();
+        try
         {
-            Id = r.Id,
-            Name = r.Name,
-            IconPath = r.IconPath,
-            TriggerType = r.TriggerType,
-            TriggerConfig = r.TriggerConfig,
-            Actions = r.Actions.Select(a => new ActionDto
+            var r = await _uow.Routines.GetByIdWithActionsAsync(id);
+            if (r == null) return null;
+
+            return new UpsertRoutineDto
             {
-                Type = a.Type,
-                Arguments = a.Arguments,
-                ExecutionOrder = a.ExecutionOrder
-            }).ToList()
-        };
+                Id = r.Id,
+                Name = r.Name,
+                IconPath = r.IconPath,
+                TriggerType = r.TriggerType,
+                TriggerConfig = r.TriggerConfig,
+                Actions = r.Actions.Select(a => new ActionDto
+                {
+                    Type = a.Type,
+                    Arguments = a.Arguments,
+                    ExecutionOrder = a.ExecutionOrder
+                }).ToList()
+            };
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     /// <inheritdoc />
@@ -134,26 +142,50 @@ public class RoutineService : IRoutineService
     /// <inheritdoc />
     public async Task DeleteAsync(Guid id)
     {
-        var entity = await _uow.Routines.GetByIdAsync(id);
-        if (entity == null) throw new RoutineNotFoundException(id);
+        await _dbLock.WaitAsync();
+        try
+        {
+            var entity = await _uow.Routines.GetByIdAsync(id);
+            if (entity == null) throw new RoutineNotFoundException(id);
 
-        entity.SoftDelete();
-        await _uow.SaveChangesAsync();
+            entity.SoftDelete();
+            await _uow.SaveChangesAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     /// <inheritdoc />
     public async Task ToggleStatusAsync(Guid id)
     {
-        var entity = await _uow.Routines.GetByIdAsync(id);
-        if (entity == null) throw new RoutineNotFoundException(id);
-        entity.ToggleStatus();
-        await _uow.SaveChangesAsync();
+        await _dbLock.WaitAsync();
+        try
+        {
+            var entity = await _uow.Routines.GetByIdAsync(id);
+            if (entity == null) throw new RoutineNotFoundException(id);
+            entity.ToggleStatus();
+            await _uow.SaveChangesAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     /// <inheritdoc />
     public async Task<bool> IsNameUniqueAsync(string name, Guid? excludeId = null)
     {
-        return await _uow.Routines.IsNameUniqueAsync(name, excludeId);
+        await _dbLock.WaitAsync();
+        try
+        {
+            return await _uow.Routines.IsNameUniqueAsync(name, excludeId);
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     /// <summary>
@@ -161,20 +193,28 @@ public class RoutineService : IRoutineService
     /// </summary>
     public async Task<IReadOnlyList<RuntimeRoutine>> GetActiveRoutinesForRuntimeAsync()
     {
-        var list = await _uow.Routines.GetActiveNotDeletedWithActionsAsync();
-        // Map to runtime models
-        var mapped = list
-            .Select(r => new RuntimeRoutine
-            (
-                r.Id,
-                r.Name,
-                r.TriggerType,
-                r.TriggerConfig,
-                r.Actions.OrderBy(a => a.ExecutionOrder)
-                .Select(a => new RuntimeAction(a.Type, a.Arguments, a.ExecutionOrder))
-            ))
-            .ToList();
+        await _dbLock.WaitAsync();
+        try
+        {
+            var list = await _uow.Routines.GetActiveNotDeletedWithActionsAsync();
+            // Map to runtime models
+            var mapped = list
+                .Select(r => new RuntimeRoutine
+                (
+                    r.Id,
+                    r.Name,
+                    r.TriggerType,
+                    r.TriggerConfig,
+                    r.Actions.OrderBy(a => a.ExecutionOrder)
+                    .Select(a => new RuntimeAction(a.Type, a.Arguments, a.ExecutionOrder))
+                ))
+                .ToList();
 
-        return mapped;
+            return mapped;
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 }
