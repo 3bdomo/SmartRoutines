@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -13,6 +13,7 @@ namespace SmartRoutines.UI.Controls
     {
         private UC_ExecutionHistory _ucHistory = null!;
         private readonly IActivityLogService? _logService;
+        private bool _loaded = false;
 
         // Parameterless ctor required by designer / DisplayPage<T>() usage
         public UC_LogsPage()
@@ -66,11 +67,11 @@ namespace SmartRoutines.UI.Controls
             // perform an initial layout pass
             AdjustResponsiveLayout();
             // Subscribe to service events only if we have a service instance
-            //if (_logService != null)
-            //{
-            //   // _logService.OnLogAdded += LogService_OnLogAdded;
-            //   // _logService.OnLogsCleared += LogService_OnLogsCleared;
-            //}
+            if (_logService != null)
+            {
+                _logService.OnLogAdded += LogService_OnLogAdded;
+                _logService.OnLogsCleared += LogService_OnLogsCleared;
+            }
         }
         private void UC_LogsPage_Resize(object? sender, EventArgs e) => AdjustResponsiveLayout();
 
@@ -119,7 +120,7 @@ namespace SmartRoutines.UI.Controls
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-
+            _loaded = true;
             if (pnlLogsArea == null)
             {
                 // defensively fail: avoid NRE and provide a visible message in debug
@@ -139,8 +140,8 @@ namespace SmartRoutines.UI.Controls
                 pnlLogsArea.Controls.Add(_ucHistory);
 
                 //// If no service (design / preview), show sample logs.
-                //if (_logService == null)
-                //{
+                if (_logService == null)
+                {
                     var sample = new List<ActivityLog>
                     {
                         new ActivityLog(Guid.NewGuid(), "Morning Setup", LogStatus.Success, "All actions completed in 2.3s"),
@@ -151,25 +152,34 @@ namespace SmartRoutines.UI.Controls
                     _ucHistory.LoadLogs(sample);
                     _ucHistory.BringToFront();
                     return;
-               // }
+                }
 
                 // Runtime: load persisted logs
-                //try
-                //{
-                //    var (dtos, total) = await _logService.GetPagedLogsAsync(1, 50);
-                //    if (dtos != null && dtos.Count > 0)
-                //        _ucHistory.LoadLogsFromDtos(dtos.ToList());
-                //    else
-                //        _ucHistory.ClearAllLogs();
-                //}
-                //catch (Exception ex)
-                //{
-                //    System.Diagnostics.Debug.WriteLine($"LoadLogsAsync error: {ex.Message}");
-                //    _ucHistory.ClearAllLogs();
-                //}
+                try
+                {
+                    var (dtos, total) = await _logService.GetPagedLogsAsync(1, 50);
+                    if (dtos != null && dtos.Count > 0)
+                    {
+                        var logEntities = dtos.Select(dto => new ActivityLog(
+                            dto.Id,
+                            dto.RoutineName,
+                            dto.Status,
+                            dto.Message
+                        )).ToList();
+                        _ucHistory.LoadLogs(logEntities);
+                    }
+                    else
+                        _ucHistory.ClearAllLogs();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"LoadLogsAsync error: {ex.Message}");
+                    // _ucHistory.ClearAllLogs();
+                }
+
             }));
         }
-
+        #region
         //private async void LoadLogsAsync()
         //{
         //    try
@@ -192,7 +202,50 @@ namespace SmartRoutines.UI.Controls
         //        MessageBox.Show($"Error loading logs: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         //    }
         //}
+        //protected override void OnLoad(EventArgs e)
+        //{
+        //    base.OnLoad(e);
 
+        //    if (_loaded) return;
+        //    _loaded = true;
+
+        //    _ucHistory = new UC_ExecutionHistory
+        //    {
+        //        Dock = DockStyle.Fill
+        //    };
+
+        //    pnlLogsArea.Controls.Add(_ucHistory);
+
+        //    if (_logService == null)
+        //    {
+        //        var sample = new List<ActivityLog>
+        //{
+        //    new ActivityLog(Guid.NewGuid(), "Morning Setup", LogStatus.Success, "All actions completed"),
+        //};
+
+        //        _ucHistory.LoadLogs(sample);
+        //    }
+        //    else
+        //    {
+        //        LoadLogsAsync(); // 👈 هنا بقى
+        //    }
+        //}
+        //private async void LoadLogsAsync()
+        //{
+        //    if (_logService == null) return;
+
+        //    var (logs, totalCount) = await _logService.GetPagedLogsAsync(1, 10);
+
+        //    var logEntities = logs.Select(dto => new ActivityLog(
+        //        Guid.Empty,
+        //        dto.RoutineName,
+        //        dto.Status,
+        //        dto.Message
+        //    )).ToList();
+
+        //    _ucHistory.LoadLogs(logEntities);
+        //}
+        #endregion
         private async void BtnClearLogs_Click(object sender, EventArgs e)
         {
             var result = MessageBox.Show(
@@ -219,47 +272,47 @@ namespace SmartRoutines.UI.Controls
             }
         }
 
-        //private void LogService_OnLogAdded(object sender, ActivityLogEventArgs e)
-        //{
-        //    // Ensure UI exists before updating it
-        //    if (this.IsDisposed) return;
-        //    if (_ucHistory == null) return;
+        private void LogService_OnLogAdded(object sender, ActivityLogEventArgs e)
+        {
+            // Ensure UI exists before updating it
+            if (this.IsDisposed) return;
+            if (_ucHistory == null) return;
 
-        //    this.BeginInvoke(new Action(() =>
-        //    {
-        //        if (_ucHistory == null) return;
+            this.BeginInvoke(new Action(() =>
+            {
+                if (_ucHistory == null) return;
 
-        //        var logEntity = new ActivityLog(
-        //            Guid.Empty,
-        //            e.Log.RoutineName,
-        //            e.Log.Status,
-        //            e.Log.Message
-        //        );
+                var logEntity = new ActivityLog(
+                    Guid.Empty,
+                    e.Log.RoutineName,
+                    e.Log.Status,
+                    e.Log.Message
+                );
 
-        //        _ucHistory.AddLogToTop(logEntity);
-        //    }));
-        //}
+                _ucHistory.AddLogToTop(logEntity);
+            }));
+        }
 
-        //private void LogService_OnLogsCleared(object sender, EventArgs e)
-        //{
-        //    if (this.IsDisposed) return;
-        //    if (_ucHistory == null) return;
+        private void LogService_OnLogsCleared(object sender, EventArgs e)
+        {
+            if (this.IsDisposed) return;
+            if (_ucHistory == null) return;
 
-        //    this.BeginInvoke(new Action(() =>
-        //    {
-        //        _ucHistory.ClearAllLogs();
-        //    }));
-        //}
+            this.BeginInvoke(new Action(() =>
+            {
+                _ucHistory.ClearAllLogs();
+            }));
+        }
 
-        // Unsubscribe safely when the control is destroyed
-        //protected override void OnHandleDestroyed(EventArgs e)
-        //{
-        //    if (_logService != null)
-        //    {
-        //      //  _logService.OnLogAdded -= LogService_OnLogAdded;
-        //       // _logService.OnLogsCleared -= LogService_OnLogsCleared;
-        //    }
-        //    base.OnHandleDestroyed(e);
-        //}
+        //Unsubscribe safely when the control is destroyed
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            if (_logService != null)
+            {
+                _logService.OnLogAdded -= LogService_OnLogAdded;
+                _logService.OnLogsCleared -= LogService_OnLogsCleared;
+            }
+            base.OnHandleDestroyed(e);
+        }
     }
 }

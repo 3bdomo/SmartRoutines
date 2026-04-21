@@ -70,7 +70,7 @@ namespace SmartRoutines.UI.Controls
             }
 
             // ── Hover ──
-            this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface2;
+            this.MouseEnter += (s, e) => this.BackColor = SmartTheme.Surface3;
             this.MouseLeave += (s, e) => this.BackColor = Color.Transparent;
 
             TooltipHelper.Set(this,
