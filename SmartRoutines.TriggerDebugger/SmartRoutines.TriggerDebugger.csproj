@@ -11,6 +11,13 @@
   <ItemGroup>
     <ProjectReference Include="..\SmartRoutines.Core\SmartRoutines.Core.csproj" />
     <ProjectReference Include="..\SmartRoutines.Logic\SmartRoutines.Logic.csproj" />
+    <ProjectReference Include="..\SmartRoutines.Data\SmartRoutines.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
   </ItemGroup>
 
 </Project>
+    
