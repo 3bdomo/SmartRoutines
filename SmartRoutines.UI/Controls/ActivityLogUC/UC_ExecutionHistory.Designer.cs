@@ -50,7 +50,7 @@
             pnlHeader.Margin = new Padding(2);
             pnlHeader.Name = "pnlHeader";
             pnlHeader.ShadowDecoration.CustomizableEdges = customizableEdges2;
-            pnlHeader.Size = new Size(2295, 131);
+            pnlHeader.Size = new Size(2295, 183);
             pnlHeader.TabIndex = 0;
             // 
             // lblTitle
@@ -66,14 +66,13 @@
             // 
             // flowItems
             // 
-            flowItems.AutoScroll = true;
             _transition.SetDecoration(flowItems, Guna.UI2.AnimatorNS.DecorationType.None);
             flowItems.Dock = DockStyle.Fill;
             flowItems.FlowDirection = FlowDirection.TopDown;
             flowItems.Location = new Point(0, 0);
             flowItems.MinimumSize = new Size(2295, 286);
             flowItems.Name = "flowItems";
-            flowItems.Size = new Size(2295, 1043);
+            flowItems.Size = new Size(2295, 991);
             flowItems.TabIndex = 0;
             flowItems.WrapContents = false;
             // 
@@ -84,11 +83,11 @@
             pnlContent.CustomizableEdges = customizableEdges3;
             _transition.SetDecoration(pnlContent, Guna.UI2.AnimatorNS.DecorationType.None);
             pnlContent.Dock = DockStyle.Fill;
-            pnlContent.Location = new Point(0, 131);
+            pnlContent.Location = new Point(0, 183);
             pnlContent.Margin = new Padding(2);
             pnlContent.Name = "pnlContent";
             pnlContent.ShadowDecoration.CustomizableEdges = customizableEdges4;
-            pnlContent.Size = new Size(2295, 1043);
+            pnlContent.Size = new Size(2295, 991);
             pnlContent.TabIndex = 1;
             // 
             // UC_ExecutionHistory

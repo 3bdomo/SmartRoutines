@@ -62,14 +62,10 @@ namespace SmartRoutines.UI.Controls
 
         private void UC_LiveConsole_Load(object? sender, EventArgs e)
         {
-            // initial demo lines to match design
-            // AppendRaw(">", LogStatus.Success);
+            
             AppendRaw("> System initialized", LogStatus.Success);
             AppendRaw("> Automation engine v2.1.0", LogStatus.Success);
-            // SetEngineStatus(true, 3); // set engine active and show monitoring line
-            // AppendRaw("> " + new string('m', 24), LogStatus.Success);
-            // AppendRaw("Executed: " + new string('m', 30), LogStatus.Success);
-
+           
             // make sure caret is visible after initial lines
             richConsole.SelectionStart = richConsole.TextLength;
             richConsole.ScrollToCaret();

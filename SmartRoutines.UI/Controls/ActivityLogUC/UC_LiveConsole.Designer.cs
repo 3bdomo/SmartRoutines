@@ -52,10 +52,11 @@
             // 
             _transition.SetDecoration(richConsole, Guna.UI2.AnimatorNS.DecorationType.None);
             richConsole.Dock = DockStyle.Fill;
-            richConsole.Location = new Point(0, 0);
+            richConsole.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            richConsole.Location = new Point(0, 140);
             richConsole.Margin = new Padding(4);
             richConsole.Name = "richConsole";
-            richConsole.Size = new Size(2295, 632);
+            richConsole.Size = new Size(2295, 442);
             richConsole.TabIndex = 0;
             richConsole.Text = "";
             richConsole.TextChanged += richConsole_TextChanged;
@@ -153,7 +154,6 @@
             // 
             AutoScaleDimensions = new SizeF(22F, 54F);
             AutoScaleMode = AutoScaleMode.Font;
-            // Add richConsole first so Dock layout reserves space for header and footer correctly
             Controls.Add(richConsole);
             Controls.Add(pnlConsoleHeader);
             Controls.Add(txtCommand);

@@ -216,7 +216,8 @@ namespace SmartRoutines.UI.Forms
                 this.Invoke(new Action(() =>
                 {
                     if (this.IsDisposed) return;
-                    var page = new Controls.UC_LogsPage();
+                    //var page = new Controls.UC_LogsPage();
+                    var page = _serviceProvider.GetRequiredService<Controls.UC_LogsPage>();
                     page.Dock = DockStyle.Fill;
                     page.Visible = false;
                     pnlMainContent.Controls.Add(page);

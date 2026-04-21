@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using SmartRoutines.Core.Domain.Entities;
 using SmartRoutines.UI.Core.Theme;
 
@@ -8,6 +13,7 @@ namespace SmartRoutines.UI.Controls
         private const int ItemHeight = 286; 
         private const int MaxVisible = 3;   
         private const int EmptyHeight = 120;
+
         public UC_ExecutionHistory()
         {
             InitializeComponent();
@@ -18,15 +24,40 @@ namespace SmartRoutines.UI.Controls
             pnlHeader.Padding = new Padding(24, 20, 0, 10);
             
             // ── Content ──
-           pnlContent.BackColor = SmartTheme.Surface;
-            flowItems.BackColor = SmartTheme.Surface;
+            pnlContent.BackColor = SmartTheme.Surface;
+            flowItems.BackColor = SmartTheme.Background;
             flowItems.FlowDirection = FlowDirection.TopDown;
             flowItems.WrapContents = false;
             flowItems.AutoScroll = true;
             flowItems.Padding = new Padding(0);
             SetHeight(EmptyHeight);
+            
+            this.Load += (s, e) => UpdateChildWidths();
+            this.Resize += (s, e) => UpdateChildWidths();
+            flowItems.SizeChanged += (s, e) => UpdateChildWidths();
         }
+        private void UpdateChildWidths()
+        {
+            if (flowItems == null) return;
+            int childWidth = Math.Max(120, flowItems.ClientSize.Width - 25);
 
+            foreach (Control c in flowItems.Controls)
+            {
+                // Keep non-log placeholders reasonably sized but allow log items to fill width
+                c.Width = childWidth;
+                c.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+            }
+            int count = flowItems.Controls.Cast<Control>().Count(ctrl => ctrl is UC_LogItem);
+            if (count == 0)
+            {
+                SetHeight(EmptyHeight);
+            }
+            else
+            {
+                int visibleCount = Math.Min(count, MaxVisible);
+                SetHeight(visibleCount * ItemHeight);
+            }
+        }
         public void LoadLogs(List<ActivityLog> logs)
         {
             flowItems.Controls.Clear();
@@ -38,7 +69,7 @@ namespace SmartRoutines.UI.Controls
             foreach (var log in logs)
             {
                 var item = new UC_LogItem(log);
-                item.Width = flowItems.Width-25 ;
+                item.Width = flowItems.Width - 25;
                 flowItems.Controls.Add(item);
             }
             // ── ضبط الارتفاع حسب عدد الـ Items ──
@@ -46,35 +77,40 @@ namespace SmartRoutines.UI.Controls
             SetHeight(visibleCount * ItemHeight);
         }
 
-        //private void ShowEmptyState()
-        //{
-        //    flowItems.Controls.Clear();
+        /// <summary>
+        /// إضافة لوج جديد في الأعلى (للـ Real-time updates)
+        /// </summary>
+        public void AddLogToTop(ActivityLog log)
+        {
+            if (log == null) return;
 
-        //    // 1. إنشاء حاوية (Panel) بعرض الـ Control الكلي
-        //    var pnlEmpty = new Panel
-        //    {
-        //        // العرض لازم يكون نفس عرض الـ flowItems عشان التوسيط يظبط
-        //        Size = new Size(flowItems.Width - 10, EmptyHeight),
-        //        BackColor = Color.Transparent // خليه شفاف عشان ياخد لون الخلفية اللي وراه
-        //    };
+            // إزالة "No logs yet" إذا كانت موجودة
+            if (flowItems.Controls.Count > 0 && flowItems.Controls[0] is Guna.UI2.WinForms.Guna2Button)
+            {
+                flowItems.Controls.Clear();
+            }
 
-        //    // 2. إنشاء النص
-        //    var lblEmpty = new Guna.UI2.WinForms.Guna2HtmlLabel
-        //    {
-        //        Text ="no logs yet", // استخدام HTML للتوسيط الدقيق
-        //        AutoSize = false, // نخليه false عشان نقدر نتحكم في الـ Dock
-        //        Font = SmartTheme.FontBody,
-        //        ForeColor = SmartTheme.TextMuted,
-        //        Dock = DockStyle.Fill, // يملأ الـ pnlEmpty بالكامل
-        //        TextAlignment = ContentAlignment.MiddleCenter // يوسطن النص داخلياً
-        //    };
+            var item = new UC_LogItem(log);
+            item.Width = flowItems.Width - 25;
+            flowItems.Controls.Add(item);
+            // ضع العنصر في المقدمة
+            flowItems.Controls.SetChildIndex(item, 0);
 
-        //    pnlEmpty.Controls.Add(lblEmpty);
-        //    flowItems.Controls.Add(pnlEmpty);
+            // تحديث الارتفاع
+            int visibleCount = Math.Min(flowItems.Controls.Count, MaxVisible);
+            SetHeight(visibleCount * ItemHeight);
+        }
 
-        //    // ضبط الارتفاع
-        //    SetHeight(EmptyHeight);
-        //}
+        /// <summary>
+        /// مسح جميع اللوجات والعودة للـ Empty State
+        /// </summary>
+        public void ClearAllLogs()
+        {
+            flowItems.Controls.Clear();
+            ShowEmptyState();
+            SetHeight(EmptyHeight);
+        }
+
         private void ShowEmptyState()
         {
             flowItems.Controls.Clear();
@@ -98,35 +134,18 @@ namespace SmartRoutines.UI.Controls
                 Cursor = Cursors.Default
             };
 
-            // 2. إضافة أيقونة لو حابة (اختياري)
-            // btnEmpty.Image = YourProperties.Resources.EmptyIcon;
-            // btnEmpty.ImageSize = new Size(30, 30);
-            // btnEmpty.ImageAlign = HorizontalAlignment.Center;
-            // btnEmpty.TextImageRelation = TextImageRelation.ImageAboveText;
-
             flowItems.Controls.Add(btnEmpty);
 
             // ضبط الارتفاع الكلي
             SetHeight(120);
         }
+
         private void SetHeight(int contentHeight)
         {
             // ارتفاع الـ UC = Header + Content
             int totalHeight = pnlHeader.Height + contentHeight;
             this.Height = totalHeight;
             pnlContent.Height = contentHeight;
-           
         }
-        //public void ClearAllLogs()
-        //{
-        //    // مسح الكروت من الـ FlowLayoutPanel
-        //    flowItems.Controls.Clear();
-
-        //    // إظهار جملة "No logs yet" في النص (باستخدام الـ Guna2Button أو الـ Label اليدوي)
-        //    ShowEmptyState();
-
-        //    // تصغير الارتفاع عشان الـ Console يطلع لفوق
-        //    SetHeight(EmptyHeight);
-        //}
     }
 }
