@@ -1,7 +1,4 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Text.Json;
+using SmartRoutines.Core.Interfaces.Logic;
 using SmartRoutines.Logic.TriggerMonitors;
 
 namespace SmartRoutines.TriggerDebugger
@@ -60,9 +57,9 @@ namespace SmartRoutines.TriggerDebugger
             Console.Write("Enter target time (HH:mm, e.g. 14:30): ");
             string timeStr = Console.ReadLine() ?? "12:00";
             if (timeStr.Contains(":") && timeStr.Length == 4) timeStr = "0" + timeStr;
-            
+
             string isoTime = $"2026-01-01T{timeStr}:00";
-            
+
             // Helpful hint for AM/PM confusion
             if (DateTime.TryParse(isoTime, out var parsed))
             {
@@ -75,7 +72,7 @@ namespace SmartRoutines.TriggerDebugger
             }
 
             string json = "{\"ScheduledTime\": \"" + isoTime + "\", \"RepeatDays\": 127}";
-            
+
             var trigger = new TimeTrigger();
             trigger.Configure(json);
 
@@ -87,9 +84,9 @@ namespace SmartRoutines.TriggerDebugger
 
         static async Task TestWiFiTrigger()
         {
-            Console.Write("Enter target SSID (e.g. HaGeR): ");
+            Console.Write("Enter target SSID (e.g. A_7): ");
             string ssid = Console.ReadLine() ?? "";
-            
+
             string json = "{\"SsidName\": \"" + ssid + "\"}";
             var trigger = new WiFiTrigger();
             trigger.Configure(json);
@@ -104,7 +101,7 @@ namespace SmartRoutines.TriggerDebugger
         {
             Console.Write("Enter threshold percentage (1-100): ");
             string pct = Console.ReadLine() ?? "20";
-            
+
             string json = "{\"BatteryThreshold\": " + pct + "}";
             var trigger = new BatteryTrigger();
             trigger.Configure(json);
@@ -119,7 +116,7 @@ namespace SmartRoutines.TriggerDebugger
         {
             Console.Write("Enter idle timeout in minutes (e.g. 5): ");
             string minutes = Console.ReadLine() ?? "1";
-            
+
             string json = "{\"IdleMinutes\": " + minutes + "}";
             var trigger = new IdleTrigger();
             trigger.Configure(json);
@@ -134,7 +131,7 @@ namespace SmartRoutines.TriggerDebugger
         {
             Console.Write("Enter app name (only name, e.g. chrome, notepad): ");
             string appName = Console.ReadLine() ?? "";
-            
+
             string json = "{\"SsidName\": \"" + appName + "\"}";
             var trigger = new AppLaunchedTrigger();
             trigger.Configure(json);
@@ -151,7 +148,7 @@ namespace SmartRoutines.TriggerDebugger
             Console.WriteLine("\nTesting Startup Trigger (Standard logic: Fires once if enabled)");
             bool shouldFire = await trigger.ShouldFireAsync();
             Console.WriteLine($"Initial Status: {trigger.GetDiagnosticInfo()} | ShouldFire: {shouldFire}");
-            
+
             if (shouldFire) trigger.OnFired();
             Console.WriteLine($"After OnFired: {trigger.GetDiagnosticInfo()}");
         }
@@ -191,7 +188,7 @@ namespace SmartRoutines.TriggerDebugger
             await RunTestLoop(trigger);
         }
 
-        static async Task RunTestLoop(Core.Interfaces.Logic.ITrigger trigger)
+        static async Task RunTestLoop(ITrigger trigger)
         {
             while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Q)
             {
@@ -201,22 +198,22 @@ namespace SmartRoutines.TriggerDebugger
                 Console.Write($"\r[{DateTime.Now:HH:mm:ss}] ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.Write($"{trigger.GetDiagnosticInfo()}".PadRight(30));
-                
+
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write(" | ShouldFire: ");
                 WriteStatus(shouldFire);
-                
+
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write(" | HasFired: ");
                 WriteStatus(hasFired);
                 Console.Write("    ");
 
                 // Emulate the Automation Engine logic
-                if (shouldFire && !hasFired) 
+                if (shouldFire && !hasFired)
                 {
                     trigger.OnFired();
                 }
-                
+
                 Console.ResetColor();
                 await Task.Delay(1000);
             }
