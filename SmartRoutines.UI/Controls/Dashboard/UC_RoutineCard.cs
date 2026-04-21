@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Guna.UI2.WinForms;
 using SmartRoutines.UI.Core.Theme;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
+using SmartRoutines.UI.Core.Helper;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -12,6 +13,8 @@ namespace SmartRoutines.UI.Controls
     {
         public event EventHandler StateChanged = null!;
         public event EventHandler DeleteRequested = null!;
+        public event EventHandler RunRequested = null!;
+        public event EventHandler StopRequested = null!;
 
         private bool _isActive = true;
         private bool _isRunning = false;
@@ -190,12 +193,25 @@ namespace SmartRoutines.UI.Controls
         public bool IsRunning
         {
             get => _isRunning;
-            set
+            set => SetRunningState(value);
+        }
+
+        /// <summary>
+        /// Visually sets the running state without triggering the generalized StateChanged 
+        /// which incorrectly fires Database Enable/Disable DB requests.
+        /// </summary>
+        public void SetRunningState(bool isRunning)
+        {
+            if (_isRunning == isRunning) return;
+            _isRunning = isRunning;
+            
+            if (this.IsHandleCreated && !this.IsDisposed)
             {
-                if (_isRunning == value) return;
-                _isRunning = value;
+                this.InvokeIfRequired(() => UpdateStateStyle());
+            }
+            else 
+            {
                 UpdateStateStyle();
-                StateChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -302,7 +318,14 @@ namespace SmartRoutines.UI.Controls
 
         private void BtnRunNow_Click(object? sender, EventArgs e)
         {
-            IsRunning = !IsRunning;
+            if (_isRunning)
+            {
+                StopRequested?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                RunRequested?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         // ─── State style ──────────────────────────────────────────────────

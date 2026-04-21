@@ -10,6 +10,7 @@ using SmartRoutines.Core.DTOs;
 using System.Threading.Tasks;
 using SmartRoutines.UI.Core.Helper;
 using SmartRoutines.UI.Controls.AddRoutine.UC_Step3;
+using System.Diagnostics;
 
 namespace SmartRoutines.UI.Controls
 {
@@ -24,10 +25,13 @@ namespace SmartRoutines.UI.Controls
         private bool _isLoading = false;
 
         private readonly IRoutineService _routineService;
+        private readonly IAutomationEngine _engine;
+        private readonly Dictionary<Guid, UC_RoutineCard> _cardIndex = new();
 
-        public UC_Dashboard(IRoutineService routineService)
+        public UC_Dashboard(IRoutineService routineService, IAutomationEngine engine)
         {
             _routineService = routineService;
+            _engine = engine;
             InitializeComponent();
 
             // Set styles BEFORE anything else — avoids mid-init repaints
@@ -43,6 +47,11 @@ namespace SmartRoutines.UI.Controls
             // Defer everything until the handle exists → avoids layout before
             // the control has real pixel dimensions
             this.HandleCreated += (_, __) => InitializeDashboard();
+
+            // Wire up singleton events directly
+            _engine.RoutineStarted += OnRoutineStarted;
+            _engine.RoutineCompleted += OnRoutineCompleted;
+            _engine.LogEmitted += OnLogEmitted;
         }
 
         // ─── Initialization ─────────────────────────────────────────────────
@@ -87,6 +96,8 @@ namespace SmartRoutines.UI.Controls
                     var card = _routineList[i];
                     card.Margin = new Padding(0, 0, 10, 10);
                     card.StateChanged += OnCardStateChanged;
+                    card.RunRequested += OnCardRunRequested;
+                    card.StopRequested += OnCardStopRequested;
                     controls[i] = card;
                 }
                 flpRoutineCards.Controls.AddRange(controls);   // ← ONE layout pass
@@ -166,6 +177,7 @@ namespace SmartRoutines.UI.Controls
                     flpRoutineCards.SuspendLayout();
                     flpRoutineCards.Controls.Clear();
                     _routineList.Clear();
+                    _cardIndex.Clear();
 
                     foreach (var cardDto in cards)
                     {
@@ -181,14 +193,18 @@ namespace SmartRoutines.UI.Controls
                             IsRunning = cardDto.IsRunningNow,
                             Margin = new Padding(0, 0, 10, 10)
                         };
-
+                        
                         card.StateChanged += OnCardStateChanged;
+                        card.RunRequested += OnCardRunRequested;
+                        card.StopRequested += OnCardStopRequested;
+
                         card.DeleteRequested += async (s, e) =>
                         {
                             if (s is UC_RoutineCard c)
                                 await OnCardDeleteRequestedAsync(c);
                         };
                         _routineList.Add(card);
+                        _cardIndex[card.Id] = card;
                         flpRoutineCards.Controls.Add(card);
                     }
 
@@ -223,7 +239,10 @@ namespace SmartRoutines.UI.Controls
                 Margin = new Padding(0, 0, 10, 10)
             };
             card.StateChanged += OnCardStateChanged;
+            card.RunRequested += OnCardRunRequested;
+            card.StopRequested += OnCardStopRequested;
             _routineList.Add(card);
+            _cardIndex[card.Id] = card;
 
             // Add single card without touching the whole layout
             flpRoutineCards.SuspendLayout();
@@ -259,6 +278,7 @@ namespace SmartRoutines.UI.Controls
                     flpRoutineCards.SuspendLayout();
                     flpRoutineCards.Controls.Remove(card);
                     _routineList.Remove(card);
+                    _cardIndex.Remove(card.Id);
                     flpRoutineCards.ResumeLayout(true);
 
                     RecalculateCachedStats();
@@ -315,6 +335,60 @@ namespace SmartRoutines.UI.Controls
 
             RecalculateCachedStats();
             PushStatsToCards();
+        }
+
+        // ─── Manual Execution Handlers ───────────────────────────────────────────
+        private async void OnCardRunRequested(object? sender, EventArgs e)
+        {
+            if (sender is UC_RoutineCard card)
+            {
+                try { await _engine.ExecuteManualAsync(card.Id); }
+                catch (Exception ex) { MessageBox.Show("Failed to start routine: " + ex.Message); }
+            }
+        }
+
+        private void OnCardStopRequested(object? sender, EventArgs e)
+        {
+            if (sender is UC_RoutineCard card)
+            {
+                try { _engine.StopRoutine(card.Id); }
+                catch (Exception ex) { MessageBox.Show("Failed to stop routine: " + ex.Message); }
+            }
+        }
+
+        // ─── Engine Callbacks (UI Thread Safe) ──────────────────────────────────
+        private void OnRoutineStarted(object? sender, SmartRoutines.Core.Events.RoutineStartedEventArgs e)
+        {
+            this.InvokeIfRequired(() => 
+            {
+                if (_cardIndex.TryGetValue(e.RoutineId, out var card))
+                {
+                    card.SetRunningState(true);
+                    RecalculateCachedStats();
+                    PushStatsToCards();
+                }
+            });
+        }
+
+        private void OnRoutineCompleted(object? sender, SmartRoutines.Core.Events.RoutineCompletedEventArgs e)
+        {
+            this.InvokeIfRequired(() => 
+            {
+                if (_cardIndex.TryGetValue(e.RoutineId, out var card))
+                {
+                    card.SetRunningState(false);
+                    card.LastRunText = e.Succeeded ? "✔ Just now" : "✖ Error";
+                    RecalculateCachedStats();
+                    PushStatsToCards();
+                }
+            });
+        }
+
+        private void OnLogEmitted(object? sender, SmartRoutines.Core.Events.LogEmittedEventArgs e)
+        {
+            // Lightweight debug stream. 
+            // In a production scenario, you might have a generic notification toaster here.
+            Debug.WriteLine($"[Dashboard Engine Log] {e.Log.RoutineName}: {e.Log.Message}");
         }
 
         // ─── Debounced resize ────────────────────────────────────────────────
@@ -410,6 +484,18 @@ namespace SmartRoutines.UI.Controls
                 "DoubleBuffered",
                 BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
                 null, control, new object[] { true });
+        }
+
+        // ─── Memory Leak Prevention ───────────────────────────────────────────
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            if (_engine != null)
+            {
+                _engine.RoutineStarted -= OnRoutineStarted;
+                _engine.RoutineCompleted -= OnRoutineCompleted;
+                _engine.LogEmitted -= OnLogEmitted;
+            }
+            base.OnHandleDestroyed(e);
         }
     }
 }
